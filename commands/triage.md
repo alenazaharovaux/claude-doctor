@@ -6,152 +6,157 @@ allowed-tools: ["Read", "Edit", "Write", "Bash", "AskUserQuestion"]
 
 # Claude Doctor Triage
 
-Interactive workflow to process accumulated flags from the audit log. For each flagged phrase the user decides: **Block** (future occurrences trigger Stop-hook), **Ignore** (future occurrences bypass detection), or **Skip** (leave for later).
+Interactive workflow to process accumulated flags from the audit log. For each phrase the user decides: **Block** (future occurrences trigger Stop-hook), **Ignore** (future occurrences bypass detection), or **Skip** (come back next time).
 
-You (Claude) are the one executing this command. Follow the steps exactly — do not improvise.
+You (Claude) execute this command. Follow the steps exactly.
 
 ## Step 1: Read the per-project config
 
 Read `${CLAUDE_PROJECT_DIR}/.claude/claude-doctor.local.md` using the Read tool.
 
 - If the file does not exist: copy `${CLAUDE_PLUGIN_ROOT}/templates/claude-doctor.local.md.example` to that path first, then re-read.
-- Extract the YAML frontmatter values: `last_triage_timestamp`, `claim_phrases_blocking`, `claim_phrases_ignore`.
+- Extract the YAML frontmatter values: `claim_phrases_blocking`, `claim_phrases_ignore`.
+- `last_triage_timestamp` is **legacy in v0.2.1** — kept in the config schema for backward compatibility, but no longer used for filtering. Skipped phrases must come back in the next triage run; tying that to a timestamp caused them to disappear forever, which is wrong.
 - If the frontmatter is malformed, tell the user, show what you read, and stop. Do not guess.
-
-Keep the parsed lists in memory for the rest of the session. You will mutate them and write back at the end.
 
 ## Step 2: Parse the audit log
 
-Run the parser from `${CLAUDE_PLUGIN_ROOT}/scripts/review.py` — but you need raw entries, not the markdown output. Do one of:
+Invoke the parser via Bash. **Always set `PYTHONIOENCODING=utf-8`** — without it, Windows Python defaults to cp1252 stdout and crashes on non-ASCII phrases.
 
-**Option A (preferred):** invoke the parser directly via Bash:
-
-```
-python3 -c "import sys; sys.path.insert(0, '${CLAUDE_PLUGIN_ROOT}/hooks'); sys.path.insert(0, '${CLAUDE_PLUGIN_ROOT}/scripts'); from review import parse_log; from lib.paths import log_file; import json; print(json.dumps(parse_log(log_file()), ensure_ascii=False))"
-```
-
-Cross-platform variant (use if `python3` is not on PATH):
+Preferred form:
 
 ```
-sh -c 'command -v python3 >/dev/null 2>&1 && PY=python3 || PY=python; "$PY" -c "import sys; sys.path.insert(0, \"${CLAUDE_PLUGIN_ROOT}/hooks\"); sys.path.insert(0, \"${CLAUDE_PLUGIN_ROOT}/scripts\"); from review import parse_log; from lib.paths import log_file; import json; print(json.dumps(parse_log(log_file()), ensure_ascii=False))"'
+PYTHONIOENCODING=utf-8 python3 -c "import sys; sys.path.insert(0, '${CLAUDE_PLUGIN_ROOT}/hooks'); sys.path.insert(0, '${CLAUDE_PLUGIN_ROOT}/scripts'); from review import parse_log; from lib.paths import log_file; import json; print(json.dumps(parse_log(log_file()), ensure_ascii=False))"
 ```
 
-Parse the JSON output. Each entry has fields `ts`, `session`, `type` (`cc` or `v1`), `phrase`, `context`, `tools`.
+Cross-platform variant (`python3` fallback to `python`):
 
-**Option B (fallback):** if the Bash invocation fails for any reason, Read the log file directly at `~/.claude/plugin-data/claude-doctor/audit.log` and parse it with a short script. But Option A is canonical — report any failure to the user before falling back.
+```
+sh -c 'command -v python3 >/dev/null 2>&1 && PY=python3 || PY=python; PYTHONIOENCODING=utf-8 "$PY" -c "import sys; sys.path.insert(0, \"${CLAUDE_PLUGIN_ROOT}/hooks\"); sys.path.insert(0, \"${CLAUDE_PLUGIN_ROOT}/scripts\"); from review import parse_log; from lib.paths import log_file; import json; print(json.dumps(parse_log(log_file()), ensure_ascii=False))"'
+```
 
-## Step 3: Filter to unprocessed CC flags
+Parse the JSON. Each entry has fields `ts`, `session`, `type` (`cc` or `v1`), `phrase`, `context`, `tools`.
+
+## Step 3: Filter to actionable CC flags
 
 Keep only entries where:
 
-- `type == "cc"` (v0.2 does not triage attribution flags — that's deferred to v0.3)
-- `ts > last_triage_timestamp` (ISO-8601 string comparison is correct here because both are `datetime.isoformat()` output)
-- `phrase` is not already in `claim_phrases_blocking` (don't re-ask about things already blocked)
-- `phrase` is not already in `claim_phrases_ignore` (don't re-ask about things already ignored)
+- `type == "cc"` (attribution v1 is out of scope in v0.2 — targeted for v0.3)
+- `phrase` is not already in `claim_phrases_blocking`
+- `phrase` is not already in `claim_phrases_ignore`
+
+**Do not filter by `last_triage_timestamp`.** It's a legacy field. Skipped phrases are supposed to come back on the next triage run, so filtering them out by timestamp breaks the intent.
 
 If the filtered list is empty, tell the user:
 
-> Nothing new to triage since `<last_triage_timestamp>`. Your blocking list has N entries, ignore list has M entries.
+> All CC flags already resolved. Blocking list has N entries, ignore list has M entries.
 
-Do not launch AskUserQuestion. Exit the command.
+Do not launch AskUserQuestion. Exit.
 
-If `last_triage_timestamp` is empty (first run ever), use the empty string — it compares less than any real timestamp, so all CC entries stay.
-
-## Step 4: Group by phrase, show top phrases first
+## Step 4: Group by phrase, decide bulk threshold
 
 Count occurrences per phrase. Sort descending by count.
 
-- If the total number of unprocessed flags is ≤ 20: skip straight to per-flag review (Step 6).
-- If total is 21–200: take the top 3 phrases by frequency, handle them as bulk (Step 5), then handle the rest per-flag.
-- If total is > 200: take the top 10 phrases by frequency, handle them as bulk, and for the remainder show only a summary count — do not ask per-flag questions.
+- Total ≤ 20 flags: skip straight to per-flag review (Step 6).
+- Total 21–200: top 3 phrases get bulk treatment (Step 5), the rest go per-flag.
+- Total > 200: top 10 phrases bulk, remainder gets a summary count only — do not ask per-flag.
 
-## Step 5: Per-phrase bulk decision
+## Step 5: Per-phrase bulk decision — with context samples
 
-For each high-frequency phrase:
+**Before each AskUserQuestion, print three real context samples for the phrase from the log.** Without them, users can't make an informed decision — «phrase X, N times» is not enough signal.
 
-Use the `AskUserQuestion` tool with one question:
+Sample selection: evenly spaced in time (first, middle, last occurrence of the phrase), so the user sees variety rather than three adjacent flags.
 
-- **question:** `Phrase «<phrase>» flagged <N> times. What do you want to do?`
+Format before the question:
+
+```
+Phrase «<phrase>» — N occurrences. Sample contexts:
+
+1. [<ts>, session <sid>]
+   "<first 200 chars of context>"
+   Tools: <tools>
+
+2. [<ts>, session <sid>]
+   "<first 200 chars of context>"
+   Tools: <tools>
+
+3. [<ts>, session <sid>]
+   "<first 200 chars of context>"
+   Tools: <tools>
+```
+
+After printing samples — `AskUserQuestion`:
+
+- **question:** `Phrase «<phrase>» — <N>×. What do you want to do?`
 - **header:** `<phrase> (<N>×)`
 - **multiSelect:** false
 - **options:**
-  - `label: "Block all"`, `description: "Future occurrences without evidence-tool will trigger the Stop hook and require correction."`
-  - `label: "Ignore all"`, `description: "Future occurrences bypass flagging entirely. Best for phrases that legitimately appear in your writing."`
-  - `label: "Review individually"`, `description: "Show each flag one by one with full context so you can decide per case."`
-  - `label: "Skip"`, `description: "Leave all flags for this phrase for later."`
+  - `label: "Ignore all"`, `description: "Drop this phrase from detection entirely. Pick this for words that are part of your normal vocabulary with no fabrication signal."`
+  - `label: "Block all"`, `description: "Future occurrences without evidence-tool trigger Stop-hook exit 2. Pick this for phrases that usually mean unverified completion claims."`
+  - `label: "Review individually"`, `description: "Expand into a per-flag loop with the full context of each occurrence."`
+  - `label: "Skip"`, `description: "Leave the phrase unresolved — it will come back in the next /triage run."`
 
-Process the answer:
-
-- **Block all:** append the phrase (lowercased) to the in-memory `claim_phrases_blocking` list if not already present.
-- **Ignore all:** append the phrase (lowercased) to `claim_phrases_ignore`.
-- **Review individually:** run Step 6 for the occurrences of just this phrase.
-- **Skip:** do nothing for this phrase, move to the next one.
-
-After each decision update a local counter: blocked N phrases, ignored M phrases, skipped K, reviewed-individually R (with sub-counts).
+**Efficiency:** AskUserQuestion supports 1–4 questions per call. You can batch up to 4 phrases in one call. Always print context samples for all batched phrases **before** the AskUserQuestion call.
 
 ## Step 6: Per-flag individual review
 
-For each remaining flag, use `AskUserQuestion`:
+For each remaining flag (or those selected via "Review individually"):
 
-- **question:** `Flag from <formatted-ts>, session <short-session>. Phrase «<phrase>» — what do you want to do?`
-- **header:** `«<phrase>»`
-- **multiSelect:** false
-- **options:**
-  - `label: "Block this phrase"`, `description: "Add «<phrase>» to blocking list. Future occurrences without evidence-tool trigger Stop hook."`
-  - `label: "Ignore this phrase"`, `description: "Add «<phrase>» to ignore list. Future occurrences are not flagged."`
-  - `label: "Skip"`, `description: "Leave this flag unresolved for later."`
-
-Before asking, show the context and tools in the current message text (not as part of the question):
+Before each AskUserQuestion, print the full context:
 
 ```
 From <ts>, session <sid>:
-  Context: <first 200 chars of context>
+  Context: <first 200 chars>
   Tools in response: <tools>
 ```
 
-Process the answer the same way as Step 5. Idempotent — if the phrase is already in the target list, don't duplicate it.
+Then AskUserQuestion:
+
+- **question:** `Flag from <formatted-ts>. Phrase «<phrase>» — what do you want to do?`
+- **header:** `«<phrase>»`
+- **multiSelect:** false
+- **options:**
+  - `label: "Ignore this phrase"`, `description: "Add to claim_phrases_ignore — all occurrences of this phrase stop being flagged."`
+  - `label: "Block this phrase"`, `description: "Add to claim_phrases_blocking — future occurrences trigger Stop hook."`
+  - `label: "Skip"`, `description: "Leave unresolved, comes back next run."`
+
+Idempotent — if the phrase is already in the target list, don't duplicate.
 
 ## Step 7: Write the updated config back
 
-After all questions are answered (or the user cancels mid-loop — see Step 9):
+After all questions are answered:
 
-1. Read the current `.claude/claude-doctor.local.md` again (fresh, in case something changed).
-2. Edit the frontmatter:
-   - Update `claim_phrases_blocking:` with the new list, formatted as `["phrase1", "phrase2"]`. Quote phrases that contain commas or special characters.
-   - Update `claim_phrases_ignore:` the same way.
-   - Update `last_triage_timestamp:` to the ISO-8601 timestamp of the **last flag you actually processed** (either blocked, ignored, or individually reviewed — skipped flags do NOT advance the timestamp). If the user cancelled before processing anything, do not update the timestamp.
-3. Write the file back via the Edit tool.
-
-The timestamp rule comes from the plan's open question 2: using the last-processed timestamp means skipped flags come back on the next `/triage` run, which is the honest behavior.
+1. Read `.claude/claude-doctor.local.md` again.
+2. Edit frontmatter:
+   - `claim_phrases_blocking:` — updated list, `["phrase1", "phrase2"]` format.
+   - `claim_phrases_ignore:` — same.
+   - `last_triage_timestamp:` — **don't touch it**, leave whatever's there (legacy field).
+3. Write via Edit tool.
 
 ## Step 8: Summary
 
-After writing the config, print a summary to the user:
+Print to the user:
 
 ```
 Triage complete.
 
 Blocked: <N> phrases [<list>]
 Ignored: <M> phrases [<list>]
-Skipped: <K> flags
-Reviewed individually: <R> flags (<blocked>/<ignored>/<skipped>)
+Skipped: <K> phrases (come back next run)
 
 Updated: .claude/claude-doctor.local.md
-Next triage will show flags after <new_last_triage_timestamp>.
 ```
 
 ## Step 9: Edge cases
 
-- **`.claude/claude-doctor.local.md` missing:** copy from template (see Step 1), then continue.
-- **Audit log missing or empty:** tell the user there's nothing to triage and exit.
-- **Zero unprocessed flags after filtering:** friendly message, exit without asking.
-- **User cancels** (closes the prompt, sends a different message): stop asking more questions. Save whatever decisions were made so far. Timestamp = last processed flag's `ts` if any was processed, otherwise leave `last_triage_timestamp` unchanged.
-- **Phrase already in blocking or ignore list:** don't ask again, silently skip.
-- **Attribution flags (`type == "v1"`) in the log:** do not triage them. Mention in the summary: `N attribution flags present — not triaged in v0.2, use /claude-doctor:review to inspect.`
-- **Malformed YAML in config:** stop and tell the user exactly what line looks wrong. Do not try to repair it silently.
+- **`.claude/claude-doctor.local.md` missing:** copy from template (Step 1), then continue.
+- **Audit log missing or empty:** tell the user, exit.
+- **Zero flags after filtering:** friendly message, exit without asking.
+- **User cancels:** save whatever decisions were made so far. No timestamp to update.
+- **Phrase already in blocking or ignore:** silent skip, don't ask again.
+- **v1 attribution flags (`type == "v1"`):** do not triage. In summary: `N attribution flags present — not triaged in v0.2, use /claude-doctor:review to inspect.`
+- **Malformed YAML:** stop, show the suspicious line. Do not try to auto-repair.
 
-## Step 10: Reminder to the user
+## Step 10: Reminder
 
-At the very end, add:
-
-> If this plugin flagged something that was a legitimate claim (false positive you'd rather ignore everywhere), open an issue at https://github.com/alenazaharovaux/claude-doctor/issues with the phrase and context — that's the feedback that drives future default-list tuning.
+> If the plugin flagged something that was a legitimate claim (false positive you'd rather ignore everywhere), open an issue at https://github.com/alenazaharovaux/claude-doctor/issues with the phrase and context — that's the feedback that drives default-list tuning.

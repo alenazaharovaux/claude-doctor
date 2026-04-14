@@ -2,6 +2,18 @@
 
 All notable changes to Claude Doctor will be documented in this file.
 
+## [0.2.1] — 2026-04-15
+
+### Fixed
+- `/claude-doctor:triage` now prints three real context samples per phrase before asking for a decision. Phrases alone (just a word and a count) did not give users enough signal to choose between block and ignore — the context around the flag is where the signal lives. Without it, every phrase looked like «maybe» and users ended up skipping everything.
+- `PYTHONIOENCODING=utf-8` is now set in the triage command's bash invocations. Windows Python defaults to cp1252 for stdout, which crashes on Cyrillic or other non-ASCII phrases. The first real `/triage` run surfaced this — the parser succeeded but the formatted print failed with a `UnicodeEncodeError`.
+
+### Changed
+- `/claude-doctor:triage` no longer filters by `last_triage_timestamp`. The previous design advanced the timestamp on every processed flag, which had a side effect: skipped phrases were permanently excluded from the next run, because their own timestamps were now older than `last_triage_timestamp`. The user had no way to say «come back to this later» without losing the phrase. New behavior: filter is based only on `claim_phrases_blocking` and `claim_phrases_ignore`. Skipped phrases come back automatically in the next triage run. The `last_triage_timestamp` field remains in the config schema for backward compatibility but is no longer read.
+
+### Migration
+- If you ran `/claude-doctor:triage` on v0.2.0 and have entries in `last_triage_timestamp`: no action needed. The field is simply ignored now. Skipped phrases from your v0.2.0 run will reappear on the next triage.
+
 ## [0.2.0] — 2026-04-15
 
 ### Added

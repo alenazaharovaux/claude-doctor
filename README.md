@@ -121,7 +121,7 @@ The command reads the log, filters out flags that were already triaged in an ear
 - **Review individually** — expands into a per-flag loop with the full context of each occurrence, so you can decide case by case.
 - **Skip** — leaves the flag for a later run.
 
-After the top phrases are handled in bulk, anything left is shown one flag at a time with the same three decisions minus the «all» qualifier. A timestamp of the last processed flag is written back into `.claude/claude-doctor.local.md` so the next `/triage` does not re-ask about anything you already resolved.
+After the top phrases are handled in bulk, anything left is shown one flag at a time with the same three decisions minus the «all» qualifier. Phrases you've already blocked or ignored are filtered out automatically on every run, so the next `/triage` does not re-ask about resolved cases. Phrases you skipped come back on the next run — skip is «decide later», not «never show again».
 
 The point of this flow is gradual training. You start with every phrase treated equally; over a few sessions the blocking list collects the small number of patterns that actually predict trouble for your work, and the ignore list absorbs whatever happens to overlap with normal writing. Once both lists stabilise, the detector runs on the residual — which is where real signal tends to be.
 
@@ -145,7 +145,7 @@ Edit `.claude/claude-doctor.local.md` in your project:
 | `claim_phrases_replace` | list[str] | `[]` | If non-empty, fully replaces defaults |
 | `claim_phrases_blocking` | list[str] | `[]` | v0.2+: phrases that trigger Stop-hook `exit 2` when detected without an evidence tool. Normally populated through `/claude-doctor:triage`. |
 | `claim_phrases_ignore` | list[str] | `[]` | v0.2+: phrases excluded from flagging entirely. Populated through `/claude-doctor:triage` (Ignore / Ignore all). |
-| `last_triage_timestamp` | string | `""` | v0.2+: ISO-8601 timestamp of the last flag processed by `/triage`. Managed automatically — do not edit by hand. |
+| `last_triage_timestamp` | string | `""` | Legacy field from v0.2.0. Kept in the schema for backward compatibility but no longer used since v0.2.1. Skipped phrases now come back on every run until blocked or ignored. |
 | `scan_history` | bool | `true` | Let fabrication-detector read `~/.claude/history.jsonl` |
 | `monitoring_path` | string | `""` | Override SessionStart summary file location |
 
