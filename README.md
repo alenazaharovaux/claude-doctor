@@ -24,21 +24,87 @@
 
 ## Installation
 
-Inside Claude Code:
+These three commands are slash commands you type **inside Claude Code** (in the prompt, the same place you type your messages to Claude). They are not shell commands — don't paste them into your terminal.
+
+Step 1 — register the marketplace:
 
 ```
 /plugin marketplace add alenazaharovaux/claude-doctor
+```
+
+Expected response from Claude Code: a confirmation that the marketplace was added, listing one available plugin (`claude-doctor`).
+
+Step 2 — install the plugin:
+
+```
 /plugin install claude-doctor@claude-doctor
+```
+
+Expected response: the plugin appears in the «Installed» tab of `/plugin`.
+
+Step 3 — create your project config:
+
+```
 /claude-doctor:setup
 ```
 
-The `setup` command creates `.claude/claude-doctor.local.md` in your current project with sensible defaults. Hooks will use built-in defaults even without this file, but per-project customization requires it.
+This creates the file `.claude/claude-doctor.local.md` inside your current project directory (the folder Claude Code was opened in). The file contains all available settings with their default values — open it in any text editor to customize.
+
+Hooks work even without the config file (they use built-in defaults), but the file is needed if you want to add project-specific keywords, change the language, or disable individual detectors.
 
 ### Prerequisites
 
-- Python 3 available as `python3` or `python` (plugin auto-detects)
-- **On Windows:** Git for Windows (bundles Git Bash, required for the shell launcher)
-- No additional Python packages required (stdlib only)
+**Python 3.** Open your terminal and run:
+
+```bash
+python3 --version
+# or, if that says "command not found":
+python --version
+```
+
+If you see something like `Python 3.10.0` or higher — you're good. If both commands say «command not found», install Python from [python.org/downloads](https://www.python.org/downloads/) (any 3.x version works, no extra packages needed).
+
+**On Windows — Git for Windows.** The plugin uses a small shell script (`hooks/run.sh`) to detect which Python command to call. On Windows this script needs `sh` to run, which comes from Git Bash. Download and install Git for Windows here: [git-scm.com/download/win](https://git-scm.com/download/win). Default install options are fine — Git Bash is added automatically.
+
+To check it's installed, open any terminal (PowerShell or cmd) and run `sh --version`. If you see a Bash version, you're set.
+
+---
+
+## First test after install
+
+To confirm the plugin works, send these three messages to Claude one at a time (as separate prompts) and look for the responses below.
+
+**Test 1 — production-keyword detector.** Type:
+
+> let's deploy this to production
+
+Expected: before Claude responds with anything else, you'll see a block starting with `🔍 CLAUDE DOCTOR — production keyword detected` followed by a five-point self-check checklist. If you see this, the `prod-keyword-detector` hook is firing.
+
+By default the detector catches both English and Russian production verbs (`deploy`, `migrate`, `публикуй`, `деплой`, etc.), so the same test works in either language.
+
+**Test 2 — architectural-question detector.** Start a fresh prompt and type:
+
+> how should i structure this project?
+
+Expected: a block starting with `🔍 CLAUDE DOCTOR — architectural/advisory question detected`, followed by instructions requiring Claude to read real files before answering. If you see this, the `architectural-question-detector` hook is firing.
+
+**Test 3 — session-start summary.** Exit Claude Code completely (close the terminal or run `/quit`), then start a new session in any project. In the first system messages of the new session, look for a line like:
+
+```
+📊 Claude Doctor: 0 flags in last 7 days. Good or hooks disabled.  (details: ...path...)
+```
+
+If you see this, the `SessionStart` hook is firing. The path in parentheses points to the monitoring file written each session.
+
+**The fabrication detector is harder to test directly** — it's the `Stop` hook, runs when Claude finishes a turn, and writes to a log in the background. To verify it ran at least once, check the heartbeat file in your terminal:
+
+```bash
+cat ~/.claude/plugin-data/claude-doctor/heartbeat.log
+```
+
+Each line is one `Stop` event with a timestamp and session ID. If the file exists and has lines, the hook is running.
+
+If any test fails — see [Troubleshooting](#troubleshooting) below.
 
 ---
 
