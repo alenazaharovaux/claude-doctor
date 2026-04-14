@@ -2,6 +2,15 @@
 
 All notable changes to Claude Doctor will be documented in this file.
 
+## [0.1.1] — 2026-04-14
+
+### Added
+- `/claude-doctor:review [N]` slash command — pretty-prints the last N flags from the audit log directly in the chat, with full context lines, session IDs, and timestamps. No need to open the log file manually. Default N=20, max 200.
+- `scripts/review.py` — standalone parser for the audit log, callable independently of the slash command.
+
+### Why this exists
+Closes a chicken-and-egg loop in v0.1.0: the `Stop` hook silently logged flagged completion claims, but users had no easy way to inspect them, which meant no false-positive feedback could come in to drive the decision about switching from log-only to blocking mode. With `/claude-doctor:review`, flags are visible without leaving Claude Code.
+
 ## [0.1.0] — 2026-04-14
 
 ### Added
