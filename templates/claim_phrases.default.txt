@@ -1,4 +1,4 @@
-# Cloud Doctor — default completion-claim phrases
+# Claude Doctor — default completion-claim phrases
 # Bilingual (EN + RU), extensible via user's .local.md
 # Format: one phrase per line, lowercase, no regex
 # Case-insensitive substring match on each sentence

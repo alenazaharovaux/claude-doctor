@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """Stop hook: detect fabrication patterns in assistant's last response.
 
-Part of Cloud Doctor plugin. Logs flagged patterns to $CLAUDE_PLUGIN_DATA/audit.log
-(or ~/.claude/plugin-data/cloud-doctor/audit.log as fallback). Log-only (exit 0).
+Part of Claude Doctor plugin. Logs flagged patterns to $CLAUDE_PLUGIN_DATA/audit.log
+(or ~/.claude/plugin-data/claude-doctor/audit.log as fallback). Log-only (exit 0).
 
 Two detectors:
 - v1: attribution fabrication — assistant claims user has «code words»
@@ -324,11 +324,11 @@ def main():
         pass
 
     if flagged:
-        print("🚫 CLOUD DOCTOR: attribution fabrication — «code words» not found in user's messages.", file=sys.stderr)
+        print("🚫 CLAUDE DOCTOR: attribution fabrication — «code words» not found in user's messages.", file=sys.stderr)
         for w, _ in flagged:
             print(f"  - {w}", file=sys.stderr)
     if cc_flagged:
-        print("⚠️  CLOUD DOCTOR: completion claim without evidence in the same response.", file=sys.stderr)
+        print("⚠️  CLAUDE DOCTOR: completion claim without evidence in the same response.", file=sys.stderr)
         for p, _ in cc_flagged:
             print(f"  - {p}", file=sys.stderr)
         print(f"  Tools in response: {response_tools or 'none'}", file=sys.stderr)

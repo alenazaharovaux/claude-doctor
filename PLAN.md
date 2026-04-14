@@ -1,23 +1,23 @@
-# Cloud Doctor Plugin Implementation Plan
+# Claude Doctor Plugin Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Package three working Claude Code hooks (prod-keyword-detector, architectural-question-detector, fabrication-detector + SessionStart analyzer) as a cross-platform Claude Code plugin published via GitHub marketplace, with bilingual EN/RU defaults and per-project configuration via `.local.md`.
 
-**Architecture:** Single-plugin marketplace repo. Hooks written in Python, invoked via `sh` launcher that auto-detects `python3|python|uv`. Per-project user config lives in `.claude/cloud-doctor.local.md` (YAML + markdown). Persistent data (logs, monitoring file) goes to `$CLAUDE_PLUGIN_DATA` with fallback to `~/.claude/plugin-data/cloud-doctor/`. Plugin hooks don't replace user hooks — they merge.
+**Architecture:** Single-plugin marketplace repo. Hooks written in Python, invoked via `sh` launcher that auto-detects `python3|python|uv`. Per-project user config lives in `.claude/claude-doctor.local.md` (YAML + markdown). Persistent data (logs, monitoring file) goes to `$CLAUDE_PLUGIN_DATA` with fallback to `~/.claude/plugin-data/claude-doctor/`. Plugin hooks don't replace user hooks — they merge.
 
 **Tech Stack:** Python 3 (stdlib only, no deps), Bash/sh launcher, JSON manifests, Markdown documentation.
 
 **Philosophy:** Rules in CLAUDE.md are post-hoc appeals — not in-moment guardrails. Hooks run inside Claude Code itself and inject context reminders at the exact event where the pattern would repeat. Three event points: `UserPromptSubmit` (prevent before acting), `Stop` (audit after), `SessionStart` (aggregate audit history for visibility). Source: project «Анализ Клода — апрель», confirmed independently by 4 bug reports on anthropics/claude-code (#37818, #36492, #29564, #37297), Karpathy, and Huang et al. 2023.
 
-**Target repo:** `C:\ObsidianVault\_repos\cloud-doctor\` → `alenazaharovaux/cloud-doctor` on GitHub.
+**Target repo:** `C:\ObsidianVault\_repos\claude-doctor\` → `alenazaharovaux/claude-doctor` on GitHub.
 
 ---
 
 ## File Structure
 
 ```
-cloud-doctor/
+claude-doctor/
 ├── .claude-plugin/
 │   ├── marketplace.json              # Single-plugin marketplace manifest
 │   └── plugin.json                   # Plugin manifest
@@ -33,9 +33,9 @@ cloud-doctor/
 │       ├── paths.py                  # Resolve PLUGIN_DATA / PROJECT_DIR with fallback
 │       └── config.py                 # Parse .local.md
 ├── commands/
-│   └── setup.md                      # /cloud-doctor:setup command
+│   └── setup.md                      # /claude-doctor:setup command
 ├── templates/
-│   ├── cloud-doctor.local.md.example
+│   ├── claude-doctor.local.md.example
 │   └── claim_phrases.default.txt     # Bilingual defaults
 ├── references/
 │   └── philosophy.md                 # English «why»
@@ -54,13 +54,13 @@ cloud-doctor/
 ## Task 1: Initialize repo structure
 
 **Files:**
-- Create: `C:/ObsidianVault/_repos/cloud-doctor/.gitignore`
+- Create: `C:/ObsidianVault/_repos/claude-doctor/.gitignore`
 - Create: directory tree per File Structure
 
 - [ ] **Step 1: Create directory tree**
 
 ```bash
-cd "C:/ObsidianVault/_repos/cloud-doctor"
+cd "C:/ObsidianVault/_repos/claude-doctor"
 mkdir -p .claude-plugin hooks/lib commands templates references tests
 ```
 
@@ -108,15 +108,15 @@ ls -la
 
 ```json
 {
-  "name": "cloud-doctor",
+  "name": "claude-doctor",
   "version": "0.1.0",
   "description": "Structural guardrails for Claude Code: in-moment reminders for production actions, architectural questions, and completion claims without evidence. Because rules in CLAUDE.md don't activate in the moment.",
   "author": {
     "name": "Alena Zakharova",
     "url": "https://github.com/alenazaharovaux"
   },
-  "homepage": "https://github.com/alenazaharovaux/cloud-doctor",
-  "repository": "https://github.com/alenazaharovaux/cloud-doctor",
+  "homepage": "https://github.com/alenazaharovaux/claude-doctor",
+  "repository": "https://github.com/alenazaharovaux/claude-doctor",
   "license": "MIT",
   "keywords": ["hooks", "self-check", "guardrails", "verification", "quality"]
 }
@@ -140,15 +140,15 @@ python3 -c "import json; json.load(open('.claude-plugin/plugin.json'))"
 
 ```json
 {
-  "name": "cloud-doctor",
-  "description": "Cloud Doctor single-plugin marketplace — structural guardrails for Claude Code",
+  "name": "claude-doctor",
+  "description": "Claude Doctor single-plugin marketplace — structural guardrails for Claude Code",
   "owner": {
     "name": "Alena Zakharova",
     "url": "https://github.com/alenazaharovaux"
   },
   "plugins": [
     {
-      "name": "cloud-doctor",
+      "name": "claude-doctor",
       "source": "./",
       "description": "In-moment reminders for production actions, architectural questions, and completion claims without evidence",
       "version": "0.1.0",
@@ -177,7 +177,7 @@ python3 -c "import json; json.load(open('.claude-plugin/marketplace.json'))"
 
 ```bash
 #!/bin/sh
-# Cloud Doctor — Python interpreter auto-detector
+# Claude Doctor — Python interpreter auto-detector
 # Tries uv run > python3 > python in order.
 # Usage: sh run.sh <hook_script_name_without_extension> [args...]
 #
@@ -189,14 +189,14 @@ HOOK_NAME="$1"
 shift
 
 if [ -z "$HOOK_NAME" ]; then
-  echo '{"systemMessage": "cloud-doctor run.sh: hook name missing"}' >&2
+  echo '{"systemMessage": "claude-doctor run.sh: hook name missing"}' >&2
   exit 0
 fi
 
 HOOK_PATH="${CLAUDE_PLUGIN_ROOT}/hooks/${HOOK_NAME}.py"
 
 if [ ! -f "$HOOK_PATH" ]; then
-  echo "{\"systemMessage\": \"cloud-doctor: hook script not found: $HOOK_PATH\"}" >&2
+  echo "{\"systemMessage\": \"claude-doctor: hook script not found: $HOOK_PATH\"}" >&2
   exit 0
 fi
 
@@ -207,7 +207,7 @@ elif command -v python3 >/dev/null 2>&1; then
 elif command -v python >/dev/null 2>&1; then
   exec python "$HOOK_PATH" "$@"
 else
-  echo '{"systemMessage": "cloud-doctor: no Python interpreter found (tried uv, python3, python)"}' >&2
+  echo '{"systemMessage": "claude-doctor: no Python interpreter found (tried uv, python3, python)"}' >&2
   exit 0
 fi
 ```
@@ -243,10 +243,10 @@ touch hooks/lib/__init__.py
 
 ```python
 # -*- coding: utf-8 -*-
-"""Path resolution helpers for Cloud Doctor hooks.
+"""Path resolution helpers for Claude Doctor hooks.
 
 Handles:
-- CLAUDE_PLUGIN_DATA env var with fallback to ~/.claude/plugin-data/cloud-doctor/
+- CLAUDE_PLUGIN_DATA env var with fallback to ~/.claude/plugin-data/claude-doctor/
 - CLAUDE_PROJECT_DIR for reading .local.md from user's project
 - CLAUDE_PLUGIN_ROOT for accessing plugin's own files (templates, libs)
 
@@ -272,7 +272,7 @@ def plugin_data():
     if data:
         p = Path(data)
     else:
-        p = Path(os.path.expanduser("~")) / ".claude" / "plugin-data" / "cloud-doctor"
+        p = Path(os.path.expanduser("~")) / ".claude" / "plugin-data" / "claude-doctor"
     p.mkdir(parents=True, exist_ok=True)
     return p
 
@@ -287,7 +287,7 @@ def project_dir():
 
 def config_file():
     """Return path to user's .local.md in their project."""
-    return project_dir() / ".claude" / "cloud-doctor.local.md"
+    return project_dir() / ".claude" / "claude-doctor.local.md"
 
 
 def log_file():
@@ -319,7 +319,7 @@ def history_jsonl():
 - [ ] **Step 3: Quick smoke test**
 
 ```bash
-cd "C:/ObsidianVault/_repos/cloud-doctor"
+cd "C:/ObsidianVault/_repos/claude-doctor"
 CLAUDE_PLUGIN_ROOT=$(pwd) python3 -c "
 import sys
 sys.path.insert(0, 'hooks')
@@ -328,7 +328,7 @@ print('root:', plugin_root())
 print('data:', plugin_data())
 print('log:', log_file())
 "
-# Expected: three paths printed, plugin_data dir created in ~/.claude/plugin-data/cloud-doctor/
+# Expected: three paths printed, plugin_data dir created in ~/.claude/plugin-data/claude-doctor/
 ```
 
 ---
@@ -342,9 +342,9 @@ print('log:', log_file())
 
 ```python
 # -*- coding: utf-8 -*-
-"""Parse per-project .local.md config for Cloud Doctor.
+"""Parse per-project .local.md config for Claude Doctor.
 
-Config file location: $CLAUDE_PROJECT_DIR/.claude/cloud-doctor.local.md
+Config file location: $CLAUDE_PROJECT_DIR/.claude/claude-doctor.local.md
 Format: YAML frontmatter + optional markdown body (body ignored).
 
 Schema:
@@ -453,7 +453,7 @@ def is_enabled(cfg, feature_key):
 - [ ] **Step 2: Smoke test**
 
 ```bash
-cd "C:/ObsidianVault/_repos/cloud-doctor"
+cd "C:/ObsidianVault/_repos/claude-doctor"
 python3 -c "
 import sys
 sys.path.insert(0, 'hooks')
@@ -469,7 +469,7 @@ print('OK defaults returned when file missing')
 - [ ] **Step 3: Test with real frontmatter (cross-platform via tempfile)**
 
 ```bash
-cd "C:/ObsidianVault/_repos/cloud-doctor"
+cd "C:/ObsidianVault/_repos/claude-doctor"
 python3 <<'PYEOF'
 import sys
 import tempfile
@@ -525,7 +525,7 @@ Changes from source:
 """UserPromptSubmit hook: detect production-operation keywords, inject self-check reminder.
 
 Port of Alena Zakharova's prod-keyword-detector. Original source:
-https://github.com/alenazaharovaux/cloud-doctor/blob/main/references/philosophy.md
+https://github.com/alenazaharovaux/claude-doctor/blob/main/references/philosophy.md
 """
 import io
 import json
@@ -558,7 +558,7 @@ DEFAULT_KEYWORDS_RU = [
 
 
 INJECT_EN = """
-🔍 CLOUD DOCTOR — production keyword detected in user's message.
+🔍 CLAUDE DOCTOR — production keyword detected in user's message.
 
 BEFORE any action, start your reply with this self-check block:
 
@@ -578,7 +578,7 @@ Fail-closed: if ANY item is not closed with a concrete fact — STOP, don't exec
 """
 
 INJECT_RU = """
-🔍 CLOUD DOCTOR — обнаружен триггер прод-операции в сообщении пользователя.
+🔍 CLAUDE DOCTOR — обнаружен триггер прод-операции в сообщении пользователя.
 
 ДО любого действия — выведи в начале ответа блок самопроверки:
 
@@ -651,7 +651,7 @@ if __name__ == "__main__":
 - [ ] **Step 2: Test with trigger word**
 
 ```bash
-cd "C:/ObsidianVault/_repos/cloud-doctor"
+cd "C:/ObsidianVault/_repos/claude-doctor"
 CLAUDE_PLUGIN_ROOT=$(pwd) echo '{"prompt": "lets deploy to production"}' | python3 hooks/prod_keyword_detector.py
 # Expected: English self-check block printed
 ```
@@ -731,7 +731,7 @@ PATTERN = (
 
 
 INJECT_EN = """
-🔍 CLOUD DOCTOR — architectural/advisory question detected.
+🔍 CLAUDE DOCTOR — architectural/advisory question detected.
 
 BEFORE generating any recommendation, plan, or substantive answer:
 
@@ -747,7 +747,7 @@ Source: Pattern B (Process over substance) — see references/philosophy.md.
 """
 
 INJECT_RU = """
-🔍 CLOUD DOCTOR — обнаружен архитектурный / советный вопрос.
+🔍 CLAUDE DOCTOR — обнаружен архитектурный / советный вопрос.
 
 ДО генерации любой рекомендации, плана, оценки:
 
@@ -801,7 +801,7 @@ if __name__ == "__main__":
 - [ ] **Step 2: Test with advisory question**
 
 ```bash
-cd "C:/ObsidianVault/_repos/cloud-doctor"
+cd "C:/ObsidianVault/_repos/claude-doctor"
 CLAUDE_PLUGIN_ROOT=$(pwd) echo '{"prompt": "how should i structure this project?"}' | python3 hooks/architectural_question_detector.py
 # Expected: English inject printed
 ```
@@ -834,7 +834,7 @@ Changes:
 - [ ] **Step 1: Write templates/claim_phrases.default.txt (bilingual)**
 
 ```
-# Cloud Doctor — default completion-claim phrases
+# Claude Doctor — default completion-claim phrases
 # Bilingual (EN + RU), expanded via user's .local.md
 # Format: one phrase per line, lowercase, no regex
 # Case-insensitive substring match on each sentence
@@ -1233,11 +1233,11 @@ def main():
 
     # Stderr visibility
     if flagged:
-        print("🚫 CLOUD DOCTOR: attribution fabrication — «code words» not found in user's messages.", file=sys.stderr)
+        print("🚫 CLAUDE DOCTOR: attribution fabrication — «code words» not found in user's messages.", file=sys.stderr)
         for w, _ in flagged:
             print(f"  - {w}", file=sys.stderr)
     if cc_flagged:
-        print("⚠️  CLOUD DOCTOR: completion claim without evidence in the same response.", file=sys.stderr)
+        print("⚠️  CLAUDE DOCTOR: completion claim without evidence in the same response.", file=sys.stderr)
         for p, _ in cc_flagged:
             print(f"  - {p}", file=sys.stderr)
         print(f"  Tools in response: {response_tools or 'none'}", file=sys.stderr)
@@ -1253,7 +1253,7 @@ if __name__ == "__main__":
 - [ ] **Step 3: Basic smoke test**
 
 ```bash
-cd "C:/ObsidianVault/_repos/cloud-doctor"
+cd "C:/ObsidianVault/_repos/claude-doctor"
 # Empty stdin — should exit 0
 echo '{}' | CLAUDE_PLUGIN_ROOT=$(pwd) python3 hooks/fabrication_detector.py
 echo "exit=$?"
@@ -1360,20 +1360,20 @@ def _classify(phrase, context):
 def _build_summary(entries, lang):
     if not entries:
         if lang == "ru":
-            return "Cloud Doctor: за 7 дней 0 срабатываний. Хорошо или хуки выключены."
-        return "Cloud Doctor: 0 flags in last 7 days. Good or hooks disabled."
+            return "Claude Doctor: за 7 дней 0 срабатываний. Хорошо или хуки выключены."
+        return "Claude Doctor: 0 flags in last 7 days. Good or hooks disabled."
     total = len(entries)
     sessions = len({e["session"] for e in entries})
     phrases = Counter(e["phrase"] for e in entries).most_common(5)
     top = ", ".join(f"{p}({c})" for p, c in phrases)
     if lang == "ru":
-        return f"Cloud Doctor — 7 дней: {total} flagов в {sessions} сессиях. Топ: {top}."
-    return f"Cloud Doctor — 7d: {total} flags across {sessions} sessions. Top: {top}."
+        return f"Claude Doctor — 7 дней: {total} flagов в {sessions} сессиях. Топ: {top}."
+    return f"Claude Doctor — 7d: {total} flags across {sessions} sessions. Top: {top}."
 
 
 def _build_monitoring_md(entries, lang):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    header = "# Cloud Doctor Monitoring\n\n" if lang != "ru" else "# Мониторинг Cloud Doctor\n\n"
+    header = "# Claude Doctor Monitoring\n\n" if lang != "ru" else "# Мониторинг Claude Doctor\n\n"
     header += f"> Updated: {ts}  |  Window: last {WINDOW_DAYS} days\n\n"
 
     if not entries:
@@ -1431,9 +1431,9 @@ if __name__ == "__main__":
 - [ ] **Step 2: Smoke test**
 
 ```bash
-cd "C:/ObsidianVault/_repos/cloud-doctor"
+cd "C:/ObsidianVault/_repos/claude-doctor"
 echo '{}' | CLAUDE_PLUGIN_ROOT=$(pwd) python3 hooks/session_start_analyzer.py
-# Expected: "📊 Cloud Doctor — 7d: 0 flags..." and a monitoring.md file path
+# Expected: "📊 Claude Doctor — 7d: 0 flags..." and a monitoring.md file path
 ```
 
 ---
@@ -1447,7 +1447,7 @@ echo '{}' | CLAUDE_PLUGIN_ROOT=$(pwd) python3 hooks/session_start_analyzer.py
 
 ```json
 {
-  "description": "Cloud Doctor — structural guardrails (production keyword / architectural question / fabrication detection + session-start audit)",
+  "description": "Claude Doctor — structural guardrails (production keyword / architectural question / fabrication detection + session-start audit)",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -1503,17 +1503,17 @@ python3 -c "import json; print(json.load(open('hooks/hooks.json'))['description'
 ## Task 12: Write user config template
 
 **Files:**
-- Create: `templates/cloud-doctor.local.md.example`
+- Create: `templates/claude-doctor.local.md.example`
 
 - [ ] **Step 1: Write template**
 
 ```markdown
 ---
-# Cloud Doctor — per-project configuration
-# Copy this file to your project as: .claude/cloud-doctor.local.md
+# Claude Doctor — per-project configuration
+# Copy this file to your project as: .claude/claude-doctor.local.md
 # Changes take effect on the next hook invocation (no Claude Code restart needed).
 
-# Master switch. When false, ALL Cloud Doctor hooks skip.
+# Master switch. When false, ALL Claude Doctor hooks skip.
 enabled: true
 
 # Injected-message language: "en" | "ru" | "both"
@@ -1548,7 +1548,7 @@ monitoring_path: ""
 
 # Notes
 
-Body is ignored by Cloud Doctor. Use it for your own notes about why
+Body is ignored by Claude Doctor. Use it for your own notes about why
 you configured the plugin this way (e.g. «added project X's jargon,
 disabled architectural for code-review-only sessions»).
 ```
@@ -1560,28 +1560,28 @@ disabled architectural for code-review-only sessions»).
 **Files:**
 - Create: `commands/setup.md`
 
-- [ ] **Step 1: Write /cloud-doctor:setup command**
+- [ ] **Step 1: Write /claude-doctor:setup command**
 
 ```markdown
 ---
 name: setup
-description: Create Cloud Doctor per-project config from template
+description: Create Claude Doctor per-project config from template
 ---
 
-# Cloud Doctor Setup
+# Claude Doctor Setup
 
 Steps:
 
-1. Check if `.claude/cloud-doctor.local.md` exists in the current project. If yes, tell the user it's already configured and offer to show current settings (cat the file).
+1. Check if `.claude/claude-doctor.local.md` exists in the current project. If yes, tell the user it's already configured and offer to show current settings (cat the file).
 
-2. If not, read the template from `${CLAUDE_PLUGIN_ROOT}/templates/cloud-doctor.local.md.example`.
+2. If not, read the template from `${CLAUDE_PLUGIN_ROOT}/templates/claude-doctor.local.md.example`.
 
 3. Create `.claude/` directory in project if missing.
 
-4. Copy the template to `.claude/cloud-doctor.local.md`.
+4. Copy the template to `.claude/claude-doctor.local.md`.
 
 5. Tell the user:
-   - File created at `.claude/cloud-doctor.local.md`
+   - File created at `.claude/claude-doctor.local.md`
    - Add `.claude/*.local.md` to `.gitignore` (don't commit personal config)
    - Hooks already use defaults; edit the file to customize (no restart needed)
    - Key switches: `enabled`, `language`, `prod_keywords_add`
@@ -1664,7 +1664,7 @@ Write the following sections in order, each with actual content — NOT a placeh
 
 **Section 7: «Credits» (final, 2 lines)**
 - Plugin origin: Alena Zakharova, project «Анализ Клода — апрель», April 2026.
-- MIT license. PRs welcome at alenazaharovaux/cloud-doctor.
+- MIT license. PRs welcome at alenazaharovaux/claude-doctor.
 
 Actual file tone: analytical, no marketing. Write in past tense for incidents, present tense for mechanism. Every claim anchored to a citation or explicit «our observation, not independently validated».
 
@@ -1681,7 +1681,7 @@ Each section written as full prose, not bullet-summary. Structure:
 
 **Top header (lines 1-15)**
 ```markdown
-# Cloud Doctor
+# Claude Doctor
 
 > Structural guardrails for Claude Code. Hook-based in-moment reminders for production actions, architectural questions, and completion claims without evidence.
 
@@ -1701,9 +1701,9 @@ Each section written as full prose, not bullet-summary. Structure:
 **Section «Installation» — exact commands:**
 ```bash
 # Inside Claude Code:
-/plugin marketplace add alenazaharovaux/cloud-doctor
-/plugin install cloud-doctor@cloud-doctor
-/cloud-doctor:setup   # creates .claude/cloud-doctor.local.md in your project
+/plugin marketplace add alenazaharovaux/claude-doctor
+/plugin install claude-doctor@claude-doctor
+/claude-doctor:setup   # creates .claude/claude-doctor.local.md in your project
 ```
 
 **Section «Configuration» — full table of every `.local.md` field:**
@@ -1734,9 +1734,9 @@ Links to `references/philosophy.md` with a teaser: «Why does this need to be a 
 - «I changed `.local.md` but nothing happens»
   - Cause: `.local.md` is read per hook invocation. Send a new user message to re-trigger.
 - «Where are the logs?»
-  - Default: `~/.claude/plugin-data/cloud-doctor/audit.log` (or `$CLAUDE_PLUGIN_DATA/` if set)
+  - Default: `~/.claude/plugin-data/claude-doctor/audit.log` (or `$CLAUDE_PLUGIN_DATA/` if set)
 - «How do I turn it off without uninstalling?»
-  - Option 1: `/plugin disable cloud-doctor@cloud-doctor`
+  - Option 1: `/plugin disable claude-doctor@claude-doctor`
   - Option 2: in `.local.md`, set `enabled: false`
 
 **Section «Contributing»**: 3 lines + link to CONTRIBUTING.md (to be added later if demand). For v0.1 just: «PRs welcome — open issues on the repo. Biggest wanted contributions: keyword list suggestions for other languages, false-positive reports from fabrication-detector.»
@@ -1769,12 +1769,12 @@ Links to `references/philosophy.md` with a teaser: «Why does this need to be a 
 - «Философия» — ссылка на philosophy.md с короткой аннотацией, тот же голос
 
 **Пример первого абзаца header'а (задаёт тон всему документу):**
-> «Cloud Doctor — плагин для Claude Code, добавляющий структурные предохранители в момент действия. Правила в CLAUDE.md и AGENTS.md Claude читает в начале сессии и к середине дрейфует от них — об этом написаны отчёты на anthropics/claude-code (#37818, #36492, #29564, #37297), об этом пишет Andrej Karpathy, это подтверждает независимое академическое исследование Huang et al. 2023. Cloud Doctor не добавляет ещё одно правило — он инжектит напоминание ровно в тот момент, когда паттерн вот-вот повторится.»
+> «Claude Doctor — плагин для Claude Code, добавляющий структурные предохранители в момент действия. Правила в CLAUDE.md и AGENTS.md Claude читает в начале сессии и к середине дрейфует от них — об этом написаны отчёты на anthropics/claude-code (#37818, #36492, #29564, #37297), об этом пишет Andrej Karpathy, это подтверждает независимое академическое исследование Huang et al. 2023. Claude Doctor не добавляет ещё одно правило — он инжектит напоминание ровно в тот момент, когда паттерн вот-вот повторится.»
 
 **Ссылка сверху:** `[🇬🇧 Read in English](README.md)`
 
 **Не делать:**
-- «Никто не заметил! Только Cloud Doctor видит!» — кликбейт
+- «Никто не заметил! Только Claude Doctor видит!» — кликбейт
 - «Просто установи и забудь» — маркетинговая ложь, плагин требует конфигурации
 - Длинные вступления «В наше время, когда AI меняет мир...» — убрать
 
@@ -1800,14 +1800,14 @@ All notable changes to this project will be documented in this file.
 - UserPromptSubmit hook: architectural question detector (bilingual EN+RU)
 - Stop hook: fabrication detector (attribution + completion-claim, log-only)
 - SessionStart hook: 7-day audit aggregator
-- Per-project config via `.claude/cloud-doctor.local.md`
-- `/cloud-doctor:setup` slash command
+- Per-project config via `.claude/claude-doctor.local.md`
+- `/claude-doctor:setup` slash command
 - Cross-platform Python launcher (`run.sh`) — auto-detects uv/python3/python
 - English and Russian READMEs
 
 ### Known limitations
 - Completion-claim detector is log-only (not blocking). Upgrade path documented in philosophy.md.
-- `CLAUDE_PLUGIN_DATA` env var — fallback to `~/.claude/plugin-data/cloud-doctor/` if unset.
+- `CLAUDE_PLUGIN_DATA` env var — fallback to `~/.claude/plugin-data/claude-doctor/` if unset.
 - No automated tests in CI yet.
 ```
 
@@ -1873,7 +1873,7 @@ if __name__ == "__main__":
 - [ ] **Step 2: Run tests**
 
 ```bash
-cd "C:/ObsidianVault/_repos/cloud-doctor"
+cd "C:/ObsidianVault/_repos/claude-doctor"
 python3 -m unittest tests.test_completion_claims -v
 # Expected: 6 tests OK
 ```
@@ -1888,7 +1888,7 @@ python3 -m unittest tests.test_completion_claims -v
 - [ ] **Step 1: Init repo**
 
 ```bash
-cd "C:/ObsidianVault/_repos/cloud-doctor"
+cd "C:/ObsidianVault/_repos/claude-doctor"
 git init -b main
 git add -A
 git status
@@ -1902,14 +1902,14 @@ Expected: all source files, no `.log` / `.heartbeat` / `__pycache__` leaked.
 
 ```bash
 git commit -m "$(cat <<'EOF'
-Initial release — Cloud Doctor v0.1.0
+Initial release — Claude Doctor v0.1.0
 
 Structural guardrails for Claude Code via hooks:
 - UserPromptSubmit: prod-keyword detector + architectural-question detector
 - Stop: fabrication detector (attribution + completion-claim, log-only)
 - SessionStart: 7-day audit aggregator
 
-Bilingual EN/RU defaults. Per-project config via .claude/cloud-doctor.local.md.
+Bilingual EN/RU defaults. Per-project config via .claude/claude-doctor.local.md.
 Cross-platform Python launcher (uv/python3/python auto-detect).
 MIT License.
 
@@ -1924,17 +1924,17 @@ EOF
 
 - [ ] **Step 4: Create GitHub repo (ask Alena for confirmation before push)**
 
-Ask: «Create `alenazaharovaux/cloud-doctor` as public GitHub repo and push? Or you want to create the repo manually in browser first?»
+Ask: «Create `alenazaharovaux/claude-doctor` as public GitHub repo and push? Or you want to create the repo manually in browser first?»
 
 - [ ] **Step 5: Push (after confirmation)**
 
 ```bash
 # If Alena creates repo in browser:
-git remote add origin https://github.com/alenazaharovaux/cloud-doctor.git
+git remote add origin https://github.com/alenazaharovaux/claude-doctor.git
 git push -u origin main
 
 # Or using gh CLI (if available):
-gh repo create cloud-doctor --public --source=. --push --description "Structural guardrails for Claude Code — hook-based in-moment reminders"
+gh repo create claude-doctor --public --source=. --push --description "Structural guardrails for Claude Code — hook-based in-moment reminders"
 ```
 
 ---
@@ -1958,8 +1958,8 @@ After completing all 20 tasks, run:
 
 ## Acceptance Criteria
 
-1. A stranger on macOS can run `/plugin marketplace add alenazaharovaux/cloud-doctor` followed by `/plugin install cloud-doctor@cloud-doctor`, then `/cloud-doctor:setup`, and have working hooks on their first session with no additional manual edits.
+1. A stranger on macOS can run `/plugin marketplace add alenazaharovaux/claude-doctor` followed by `/plugin install claude-doctor@claude-doctor`, then `/claude-doctor:setup`, and have working hooks on their first session with no additional manual edits.
 2. The same stranger on Windows 11 with `python` (no `python3`) can install and have hooks actually fire (no silent failure like hookify #405).
-3. Adding `prod_keywords_add: ["mycustomword"]` to `.claude/cloud-doctor.local.md` makes the prod-keyword hook fire on that word within one session (hookify-style hot config, no restart).
+3. Adding `prod_keywords_add: ["mycustomword"]` to `.claude/claude-doctor.local.md` makes the prod-keyword hook fire on that word within one session (hookify-style hot config, no restart).
 4. Setting `enabled: false` silences all hooks without uninstall.
 5. SessionStart inject appears once per session with flag count summary.

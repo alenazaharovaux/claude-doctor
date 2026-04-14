@@ -1,4 +1,4 @@
-# Why Cloud Doctor is a hook, not another rule in CLAUDE.md
+# Why Claude Doctor is a hook, not another rule in CLAUDE.md
 
 ## The problem
 
@@ -34,13 +34,13 @@ Claude Code's hook system is the one mechanism that operates outside the model's
 
 Three events, three purposes, chosen because they cover the full action cycle:
 
-- **UserPromptSubmit** — prevent before acting. Triggered when the user sends a message. Cloud Doctor's `prod-keyword-detector` fires here when the user's message contains production-operation language (`deploy`, `migrate`, `mass send`) and injects a self-check block the model must fill out before its next action. Same event for `architectural-question-detector` — when the user phrases an advisory question, inject the requirement to read real files before generating a recommendation.
-- **Stop** — audit after. Triggered when the model finishes its turn and is about to stop. Cloud Doctor's `fabrication-detector` fires here, scans the assistant's last response for attribution fabrication (Pattern A) and completion claims without evidence tool calls (variant of Pattern B), logs flagged patterns to an audit file. Currently log-only.
-- **SessionStart** — aggregate history for visibility. Triggered once per new session. Cloud Doctor's analyzer reads the last 7 days of audit log, produces a summary, writes a human-readable monitoring file, and injects a one-line status into the session's initial context. This makes the accumulated audit visible without requiring the user to open files.
+- **UserPromptSubmit** — prevent before acting. Triggered when the user sends a message. Claude Doctor's `prod-keyword-detector` fires here when the user's message contains production-operation language (`deploy`, `migrate`, `mass send`) and injects a self-check block the model must fill out before its next action. Same event for `architectural-question-detector` — when the user phrases an advisory question, inject the requirement to read real files before generating a recommendation.
+- **Stop** — audit after. Triggered when the model finishes its turn and is about to stop. Claude Doctor's `fabrication-detector` fires here, scans the assistant's last response for attribution fabrication (Pattern A) and completion claims without evidence tool calls (variant of Pattern B), logs flagged patterns to an audit file. Currently log-only.
+- **SessionStart** — aggregate history for visibility. Triggered once per new session. Claude Doctor's analyzer reads the last 7 days of audit log, produces a summary, writes a human-readable monitoring file, and injects a one-line status into the session's initial context. This makes the accumulated audit visible without requiring the user to open files.
 
 ## Log-only vs blocking
 
-The v0.1 release of Cloud Doctor ships with log-only detection for the Stop hook. The detector can identify attribution fabrications (v1) and completion claims without evidence (v2), but it does not block — it logs and continues. This is intentional. False-positive rates on novel codebases, languages, and user styles are unknown until we gather data. A blocking detector with 30% false-positive rate is worse than a log-only detector with 10% — blocking interrupts real work, logging just accumulates a review queue.
+The v0.1 release of Claude Doctor ships with log-only detection for the Stop hook. The detector can identify attribution fabrications (v1) and completion claims without evidence (v2), but it does not block — it logs and continues. This is intentional. False-positive rates on novel codebases, languages, and user styles are unknown until we gather data. A blocking detector with 30% false-positive rate is worse than a log-only detector with 10% — blocking interrupts real work, logging just accumulates a review queue.
 
 The upgrade path is documented. When a specific detector's false-positive rate is measured on sufficient sessions (the plugin ships with heartbeat and monitoring aggregation precisely to make this measurement possible), the Stop-hook exit code can be flipped from 0 (log, continue) to 2 (log, block, fed back to model). This is a one-line change in `fabrication_detector.py` and should be done per-detector as data justifies, not all at once.
 
@@ -48,10 +48,10 @@ The upgrade path is documented. When a specific detector's false-positive rate i
 
 Hooks can't catch everything. They catch the specific patterns encoded in the detectors: production keywords, advisory phrasings, attribution structures, completion claims. New patterns need new detectors. Not every useful rule maps cleanly onto a detectable pattern — some rules are genuinely subjective judgment calls the model has to make in-moment, and no hook can substitute for that judgment.
 
-The plugin is a starting point, not a cure. The real product is the workflow: tuning keyword lists to your project's vocabulary, reviewing flagged sessions regularly, adding new detectors as new patterns surface. Cloud Doctor provides the infrastructure (event registration, config parsing, log aggregation) so that tuning is cheap and adding a new detector is a self-contained change.
+The plugin is a starting point, not a cure. The real product is the workflow: tuning keyword lists to your project's vocabulary, reviewing flagged sessions regularly, adding new detectors as new patterns surface. Claude Doctor provides the infrastructure (event registration, config parsing, log aggregation) so that tuning is cheap and adding a new detector is a self-contained change.
 
 ## Credits
 
 - Plugin origin: Alena Zakharova, project «Анализ Клода — апрель», April 2026.
 - Implementation & documentation: Claude Opus 4.6 (with explicit audit and empirical verification at each step).
-- MIT License. Issues and PRs welcome at [alenazaharovaux/cloud-doctor](https://github.com/alenazaharovaux/cloud-doctor).
+- MIT License. Issues and PRs welcome at [alenazaharovaux/claude-doctor](https://github.com/alenazaharovaux/claude-doctor).

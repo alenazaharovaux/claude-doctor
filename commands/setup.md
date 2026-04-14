@@ -1,22 +1,22 @@
 ---
 name: setup
-description: Create Cloud Doctor per-project config from template
+description: Create Claude Doctor per-project config from template
 ---
 
-# Cloud Doctor Setup
+# Claude Doctor Setup
 
 Steps:
 
-1. Check if `.claude/cloud-doctor.local.md` exists in the current project (use `Read` tool or `ls`). If yes, tell the user it's already configured and offer to show current settings with a `Read` tool call.
+1. Check if `.claude/claude-doctor.local.md` exists in the current project (use `Read` tool or `ls`). If yes, tell the user it's already configured and offer to show current settings with a `Read` tool call.
 
-2. If not, read the template from `${CLAUDE_PLUGIN_ROOT}/templates/cloud-doctor.local.md.example`.
+2. If not, read the template from `${CLAUDE_PLUGIN_ROOT}/templates/claude-doctor.local.md.example`.
 
 3. Create `.claude/` directory in project if missing (`mkdir -p .claude`).
 
-4. Copy the template to `.claude/cloud-doctor.local.md` using the `Write` tool.
+4. Copy the template to `.claude/claude-doctor.local.md` using the `Write` tool.
 
 5. Tell the user:
-   - File created at `.claude/cloud-doctor.local.md`
+   - File created at `.claude/claude-doctor.local.md`
    - Add `.claude/*.local.md` to `.gitignore` (don't commit personal config)
    - Hooks already use defaults; edit the file to customize (no restart needed)
    - Key switches: `enabled`, `language`, `prod_keywords_add`

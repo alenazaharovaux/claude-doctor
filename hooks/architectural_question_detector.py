@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """UserPromptSubmit hook: detect architectural/advisory questions, require tool-call grounding.
 
-Part of Cloud Doctor plugin. Source & rationale:
+Part of Claude Doctor plugin. Source & rationale:
 references/philosophy.md section "Pattern B (Process over substance)".
 """
 import io
@@ -41,7 +41,7 @@ PATTERN = (
 
 
 INJECT_EN = """
-🔍 CLOUD DOCTOR — architectural/advisory question detected.
+🔍 CLAUDE DOCTOR — architectural/advisory question detected.
 
 BEFORE generating any recommendation, plan, or substantive answer:
 
@@ -57,7 +57,7 @@ Source: Pattern B (Process over substance) — see references/philosophy.md.
 """
 
 INJECT_RU = """
-🔍 CLOUD DOCTOR — обнаружен архитектурный / советный вопрос.
+🔍 CLAUDE DOCTOR — обнаружен архитектурный / советный вопрос.
 
 ДО генерации любой рекомендации, плана, оценки:
 

@@ -1,10 +1,10 @@
-# Cloud Doctor
+# Claude Doctor
 
 > Структурные предохранители для Claude Code. Хук-напоминания в момент действия — для прод-операций, архитектурных вопросов и заявлений о завершённости без подтверждения.
 
 [🇬🇧 Read in English](README.md)
 
-**Зачем это нужно.** Правила в CLAUDE.md и AGENTS.md Claude читает в начале сессии и к середине дрейфует от них — это описано в отчётах на anthropics/claude-code (#37818, #36492, #29564, #37297), об этом пишет Andrej Karpathy, это подтверждает независимое академическое исследование Huang et al. 2023. Cloud Doctor не добавляет ещё одно правило — он инжектит напоминание ровно в тот момент, когда паттерн вот-вот повторится (`UserPromptSubmit` / `Stop`). Полная аргументация с цитатами — в [references/philosophy.md](references/philosophy.md).
+**Зачем это нужно.** Правила в CLAUDE.md и AGENTS.md Claude читает в начале сессии и к середине дрейфует от них — это описано в отчётах на anthropics/claude-code (#37818, #36492, #29564, #37297), об этом пишет Andrej Karpathy, это подтверждает независимое академическое исследование Huang et al. 2023. Claude Doctor не добавляет ещё одно правило — он инжектит напоминание ровно в тот момент, когда паттерн вот-вот повторится (`UserPromptSubmit` / `Stop`). Полная аргументация с цитатами — в [references/philosophy.md](references/philosophy.md).
 
 **Статус:** v0.1.0, детекция на Stop-хуке в режиме только-лог (настраивается). Кроссплатформенный — Linux, macOS, Windows с Git Bash.
 
@@ -16,7 +16,7 @@
 
 **Детектор архитектурных вопросов** (UserPromptSubmit). Срабатывает на советные формулировки (`how should I...`, `what's the best approach`, `посоветуй`, `как лучше`, `какой подход`). При срабатывании требует как минимум один tool call на чтение реальных файлов (Read / Bash / Grep / Glob) до генерации любой рекомендации. Закрывает Паттерн B из документа о философии — на советно-сформулированных вопросах модель склонна отвечать из auto-loaded контекста, а не из свежего чтения файлов.
 
-**Детектор фабрикаций** (Stop). Сканирует последний ответ модели перед её остановкой. Две проверки: (1) фабрикация атрибуции — модель приписывает пользователю «кодовые слова», которых пользователь на самом деле не произносил в утвердительной форме; (2) заявления о завершённости без доказательств — модель говорит «готово», «работает», «задеплоено» в ответе, где не было ни одного инструмента, подтверждающего реальное состояние (Read, Bash, Grep, Glob, WebFetch, MCP-чтения). В v0.1 только-лог — флаги пишутся в `$CLAUDE_PLUGIN_DATA/audit.log` (fallback: `~/.claude/plugin-data/cloud-doctor/audit.log`).
+**Детектор фабрикаций** (Stop). Сканирует последний ответ модели перед её остановкой. Две проверки: (1) фабрикация атрибуции — модель приписывает пользователю «кодовые слова», которых пользователь на самом деле не произносил в утвердительной форме; (2) заявления о завершённости без доказательств — модель говорит «готово», «работает», «задеплоено» в ответе, где не было ни одного инструмента, подтверждающего реальное состояние (Read, Bash, Grep, Glob, WebFetch, MCP-чтения). В v0.1 только-лог — флаги пишутся в `$CLAUDE_PLUGIN_DATA/audit.log` (fallback: `~/.claude/plugin-data/claude-doctor/audit.log`).
 
 **SessionStart-анализатор**. Раз в сессию читает audit log за последние семь дней, строит сводку, пишет её в человекочитаемый файл мониторинга и инжектит однострочный статус в начальный контекст сессии. Делает накопленный аудит видимым без ручного открытия файлов.
 
@@ -27,12 +27,12 @@
 Внутри Claude Code:
 
 ```
-/plugin marketplace add alenazaharovaux/cloud-doctor
-/plugin install cloud-doctor@cloud-doctor
-/cloud-doctor:setup
+/plugin marketplace add alenazaharovaux/claude-doctor
+/plugin install claude-doctor@claude-doctor
+/claude-doctor:setup
 ```
 
-Команда `setup` создаёт `.claude/cloud-doctor.local.md` в текущем проекте с разумными дефолтами. Хуки работают и без этого файла — используют встроенные дефолты. Файл нужен только для кастомизации под проект.
+Команда `setup` создаёт `.claude/claude-doctor.local.md` в текущем проекте с разумными дефолтами. Хуки работают и без этого файла — используют встроенные дефолты. Файл нужен только для кастомизации под проект.
 
 ### Требования
 
@@ -44,7 +44,7 @@
 
 ## Конфигурация
 
-Редактируй `.claude/cloud-doctor.local.md` в своём проекте:
+Редактируй `.claude/claude-doctor.local.md` в своём проекте:
 
 | Поле | Тип | Дефолт | Что делает |
 |---|---|---|---|
@@ -98,14 +98,14 @@ History-scan выключен по причинам приватности.
 **`/plugin update` говорит «already at latest» хотя на GitHub новый релиз.** Известный баг Claude Code — см. [anthropics/claude-code issue #25244](https://github.com/anthropics/claude-code/issues/25244). Plugin manager не делает `git pull` локального клона marketplace перед проверкой версии. Workaround:
 
 ```bash
-cd ~/.claude/plugins/marketplaces/cloud-doctor && git pull
+cd ~/.claude/plugins/marketplaces/claude-doctor && git pull
 # затем в Claude Code:
-/plugin update cloud-doctor@cloud-doctor
+/plugin update claude-doctor@claude-doctor
 ```
 
-**Где логи?** Audit log: `$CLAUDE_PLUGIN_DATA/audit.log`, если эта env var установлена Claude Code, иначе `~/.claude/plugin-data/cloud-doctor/audit.log`. Heartbeat log (доказывает, что хук запускался): та же директория, `heartbeat.log`. Файл мониторинга: та же директория, `monitoring.md`, если не переопределён через `monitoring_path`.
+**Где логи?** Audit log: `$CLAUDE_PLUGIN_DATA/audit.log`, если эта env var установлена Claude Code, иначе `~/.claude/plugin-data/claude-doctor/audit.log`. Heartbeat log (доказывает, что хук запускался): та же директория, `heartbeat.log`. Файл мониторинга: та же директория, `monitoring.md`, если не переопределён через `monitoring_path`.
 
-**Как выключить без удаления?** Два варианта. (1) `/plugin disable cloud-doctor@cloud-doctor` — отключает глобально до ручного включения. (2) В `.claude/cloud-doctor.local.md` поставь `enabled: false` — отключает для конкретного проекта. Второй вариант предпочтительнее, если хочешь чтобы плагин работал везде, кроме одного конкретного репо.
+**Как выключить без удаления?** Два варианта. (1) `/plugin disable claude-doctor@claude-doctor` — отключает глобально до ручного включения. (2) В `.claude/claude-doctor.local.md` поставь `enabled: false` — отключает для конкретного проекта. Второй вариант предпочтительнее, если хочешь чтобы плагин работал везде, кроме одного конкретного репо.
 
 **Ложные срабатывания fabrication-detector.** В v0.1 детектор работает в режиме только-лог, так что ложные срабатывания не блокируют работу — они накапливаются в audit log. Просматривай лог, подстраивай `claim_phrases_replace`, убирая фразы, которые дают шум на твоём стиле письма. Систематические паттерны ложных срабатываний стоит репортить issue'ом.
 
@@ -113,7 +113,7 @@ cd ~/.claude/plugins/marketplaces/cloud-doctor && git pull
 
 ## Contributing
 
-Issues и PR'ы приветствуются: [github.com/alenazaharovaux/cloud-doctor](https://github.com/alenazaharovaux/cloud-doctor). Самые полезные контрибьюшены для v0.2:
+Issues и PR'ы приветствуются: [github.com/alenazaharovaux/claude-doctor](https://github.com/alenazaharovaux/claude-doctor). Самые полезные контрибьюшены для v0.2:
 
 - Предложения словарей для других языков
 - Отчёты о ложных срабатываниях fabrication-detector с примерами из транскриптов

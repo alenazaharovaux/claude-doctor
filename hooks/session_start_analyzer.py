@@ -70,28 +70,28 @@ def _parse_log(path):
 def _build_summary(entries, lang):
     if not entries:
         if lang == "ru":
-            return "Cloud Doctor: за 7 дней 0 срабатываний. Хорошо или хуки выключены."
-        return "Cloud Doctor: 0 flags in last 7 days. Good or hooks disabled."
+            return "Claude Doctor: за 7 дней 0 срабатываний. Хорошо или хуки выключены."
+        return "Claude Doctor: 0 flags in last 7 days. Good or hooks disabled."
     total = len(entries)
     sessions = len({e["session"] for e in entries})
     phrases = Counter(e["phrase"] for e in entries).most_common(5)
     top = ", ".join(f"{p}({c})" for p, c in phrases)
     if lang == "ru":
-        return f"Cloud Doctor — 7 дней: {total} flagов в {sessions} сессиях. Топ: {top}."
-    return f"Cloud Doctor — 7d: {total} flags across {sessions} sessions. Top: {top}."
+        return f"Claude Doctor — 7 дней: {total} flagов в {sessions} сессиях. Топ: {top}."
+    return f"Claude Doctor — 7d: {total} flags across {sessions} sessions. Top: {top}."
 
 
 def _build_monitoring_md(entries, lang):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     if lang == "ru":
-        header = "# Мониторинг Cloud Doctor\n\n"
+        header = "# Мониторинг Claude Doctor\n\n"
         header += f"> Обновлено: {ts}  |  Окно: последние {WINDOW_DAYS} дней\n\n"
         no_flags = "_За окно срабатываний нет._\n"
         total_label = "Всего срабатываний"
         sessions_label = "Уникальных сессий"
         top_header = "## Топ фраз"
     else:
-        header = "# Cloud Doctor Monitoring\n\n"
+        header = "# Claude Doctor Monitoring\n\n"
         header += f"> Updated: {ts}  |  Window: last {WINDOW_DAYS} days\n\n"
         no_flags = "_No flags in window._\n"
         total_label = "Total flags"

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Path resolution helpers for Cloud Doctor hooks.
+"""Path resolution helpers for Claude Doctor hooks.
 
 Handles:
-- CLAUDE_PLUGIN_DATA env var with fallback to ~/.claude/plugin-data/cloud-doctor/
+- CLAUDE_PLUGIN_DATA env var with fallback to ~/.claude/plugin-data/claude-doctor/
 - CLAUDE_PROJECT_DIR for reading .local.md from user's project
 - CLAUDE_PLUGIN_ROOT for accessing plugin's own files (templates, libs)
 
@@ -28,7 +28,7 @@ def plugin_data():
     if data:
         p = Path(data)
     else:
-        p = Path(os.path.expanduser("~")) / ".claude" / "plugin-data" / "cloud-doctor"
+        p = Path(os.path.expanduser("~")) / ".claude" / "plugin-data" / "claude-doctor"
     p.mkdir(parents=True, exist_ok=True)
     return p
 
@@ -43,7 +43,7 @@ def project_dir():
 
 def config_file():
     """Return path to user's .local.md in their project."""
-    return project_dir() / ".claude" / "cloud-doctor.local.md"
+    return project_dir() / ".claude" / "claude-doctor.local.md"
 
 
 def log_file():

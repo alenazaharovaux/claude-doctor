@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Parse per-project .local.md config for Cloud Doctor.
+"""Parse per-project .local.md config for Claude Doctor.
 
-Config file location: $CLAUDE_PROJECT_DIR/.claude/cloud-doctor.local.md
+Config file location: $CLAUDE_PROJECT_DIR/.claude/claude-doctor.local.md
 Format: YAML frontmatter + optional markdown body (body ignored).
 
 Schema:

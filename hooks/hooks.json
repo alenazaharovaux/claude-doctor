@@ -1,5 +1,5 @@
 {
-  "description": "Cloud Doctor — structural guardrails (production keyword / architectural question / fabrication detection + session-start audit)",
+  "description": "Claude Doctor — structural guardrails (production keyword / architectural question / fabrication detection + session-start audit)",
   "hooks": {
     "UserPromptSubmit": [
       {

@@ -1,4 +1,4 @@
-# Cloud Doctor
+# Claude Doctor
 
 > Structural guardrails for Claude Code. Hook-based in-moment reminders for production actions, architectural questions, and completion claims without evidence.
 
@@ -16,7 +16,7 @@
 
 **Architectural-question detector** (UserPromptSubmit). Triggers on advisory phrasings (`how should I...`, `what's the best approach`, `which pattern`, `посоветуй`, `как лучше`). On match, requires at least one tool call on real files (Read / Bash / Grep / Glob) before the assistant generates any recommendation. Addresses Pattern B from the philosophy doc — advisory questions tend to be answered from auto-loaded context rather than from fresh file reads.
 
-**Fabrication detector** (Stop). Scans the assistant's last response when it tries to stop. Two sub-checks: (1) attribution fabrication — assistant claims the user has «code words» that the user never actually used in declarative form; (2) completion claims without evidence — assistant says «done», «deployed», «works» in a response that made no evidence-producing tool call (Read, Bash, Grep, Glob, WebFetch, MCP reads). Log-only in v0.1; flagged patterns are written to `$CLAUDE_PLUGIN_DATA/audit.log` (or `~/.claude/plugin-data/cloud-doctor/audit.log` as fallback).
+**Fabrication detector** (Stop). Scans the assistant's last response when it tries to stop. Two sub-checks: (1) attribution fabrication — assistant claims the user has «code words» that the user never actually used in declarative form; (2) completion claims without evidence — assistant says «done», «deployed», «works» in a response that made no evidence-producing tool call (Read, Bash, Grep, Glob, WebFetch, MCP reads). Log-only in v0.1; flagged patterns are written to `$CLAUDE_PLUGIN_DATA/audit.log` (or `~/.claude/plugin-data/claude-doctor/audit.log` as fallback).
 
 **Session-start analyzer** (SessionStart). Once per session, reads the last seven days of audit log, produces a concise summary, writes a human-readable monitoring file, and injects a one-line status into the session's initial context. Makes accumulated audit visible without requiring manual file inspection.
 
@@ -27,12 +27,12 @@
 Inside Claude Code:
 
 ```
-/plugin marketplace add alenazaharovaux/cloud-doctor
-/plugin install cloud-doctor@cloud-doctor
-/cloud-doctor:setup
+/plugin marketplace add alenazaharovaux/claude-doctor
+/plugin install claude-doctor@claude-doctor
+/claude-doctor:setup
 ```
 
-The `setup` command creates `.claude/cloud-doctor.local.md` in your current project with sensible defaults. Hooks will use built-in defaults even without this file, but per-project customization requires it.
+The `setup` command creates `.claude/claude-doctor.local.md` in your current project with sensible defaults. Hooks will use built-in defaults even without this file, but per-project customization requires it.
 
 ### Prerequisites
 
@@ -44,11 +44,11 @@ The `setup` command creates `.claude/cloud-doctor.local.md` in your current proj
 
 ## Configuration
 
-Edit `.claude/cloud-doctor.local.md` in your project:
+Edit `.claude/claude-doctor.local.md` in your project:
 
 | Field | Type | Default | Meaning |
 |---|---|---|---|
-| `enabled` | bool | `true` | Master switch. When `false`, all Cloud Doctor hooks skip. |
+| `enabled` | bool | `true` | Master switch. When `false`, all Claude Doctor hooks skip. |
 | `language` | string | `"en"` | Injected-message language: `"en"`, `"ru"`, or `"both"` |
 | `prod_keywords_add` | list[str] | `[]` | Words added to the default prod-keyword list |
 | `prod_keywords_replace` | list[str] | `[]` | If non-empty, fully replaces defaults |
@@ -98,14 +98,14 @@ Why does this need to be a hook instead of just another rule in CLAUDE.md? Short
 **`/plugin update` says «already at latest version» but I see a new release on GitHub.** Known Claude Code bug — see [anthropics/claude-code issue #25244](https://github.com/anthropics/claude-code/issues/25244). The plugin manager doesn't `git pull` the marketplace clone before checking versions. Workaround:
 
 ```bash
-cd ~/.claude/plugins/marketplaces/cloud-doctor && git pull
+cd ~/.claude/plugins/marketplaces/claude-doctor && git pull
 # then back in Claude Code:
-/plugin update cloud-doctor@cloud-doctor
+/plugin update claude-doctor@claude-doctor
 ```
 
-**Where are the logs?** Audit log: `$CLAUDE_PLUGIN_DATA/audit.log` if that env var is set by Claude Code, otherwise `~/.claude/plugin-data/cloud-doctor/audit.log`. Heartbeat log (proves hook ran even without flags): same directory, `heartbeat.log`. Monitoring summary: same directory, `monitoring.md`, unless you override `monitoring_path`.
+**Where are the logs?** Audit log: `$CLAUDE_PLUGIN_DATA/audit.log` if that env var is set by Claude Code, otherwise `~/.claude/plugin-data/claude-doctor/audit.log`. Heartbeat log (proves hook ran even without flags): same directory, `heartbeat.log`. Monitoring summary: same directory, `monitoring.md`, unless you override `monitoring_path`.
 
-**How do I turn it off without uninstalling?** Two options. (1) `/plugin disable cloud-doctor@cloud-doctor` — disables until you re-enable. (2) In `.claude/cloud-doctor.local.md`, set `enabled: false` — disables per-project. Per-project setting is preferred when you want the plugin on globally but off in a specific repo.
+**How do I turn it off without uninstalling?** Two options. (1) `/plugin disable claude-doctor@claude-doctor` — disables until you re-enable. (2) In `.claude/claude-doctor.local.md`, set `enabled: false` — disables per-project. Per-project setting is preferred when you want the plugin on globally but off in a specific repo.
 
 **False positives on fabrication-detector.** The v0.1 release is log-only, so false positives don't block work — they accumulate in the log. Review flagged phrases and adjust `claim_phrases_replace` to exclude ones that cause noise in your writing style. Report patterns of systematic false positives as an issue.
 
@@ -113,7 +113,7 @@ cd ~/.claude/plugins/marketplaces/cloud-doctor && git pull
 
 ## Contributing
 
-Issues and PRs welcome at [github.com/alenazaharovaux/cloud-doctor](https://github.com/alenazaharovaux/cloud-doctor). The most useful contributions for v0.2:
+Issues and PRs welcome at [github.com/alenazaharovaux/claude-doctor](https://github.com/alenazaharovaux/claude-doctor). The most useful contributions for v0.2:
 
 - Keyword list suggestions for additional languages
 - False-positive reports from fabrication-detector with examples from your transcripts

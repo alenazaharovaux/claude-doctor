@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """UserPromptSubmit hook: detect production-operation keywords, inject self-check reminder.
 
-Part of Cloud Doctor plugin. Source & rationale:
-https://github.com/alenazaharovaux/cloud-doctor/blob/main/references/philosophy.md
+Part of Claude Doctor plugin. Source & rationale:
+https://github.com/alenazaharovaux/claude-doctor/blob/main/references/philosophy.md
 """
 import io
 import json
@@ -35,7 +35,7 @@ DEFAULT_KEYWORDS_RU = [
 
 
 INJECT_EN = """
-🔍 CLOUD DOCTOR — production keyword detected in user's message.
+🔍 CLAUDE DOCTOR — production keyword detected in user's message.
 
 BEFORE any action, start your reply with this self-check block:
 
@@ -55,7 +55,7 @@ Fail-closed: if ANY item is not closed with a concrete fact — STOP, don't exec
 """
 
 INJECT_RU = """
-🔍 CLOUD DOCTOR — обнаружен триггер прод-операции в сообщении пользователя.
+🔍 CLAUDE DOCTOR — обнаружен триггер прод-операции в сообщении пользователя.
 
 ДО любого действия — выведи в начале ответа блок самопроверки:
 

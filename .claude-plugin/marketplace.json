@@ -1,13 +1,13 @@
 {
-  "name": "cloud-doctor",
-  "description": "Cloud Doctor single-plugin marketplace — structural guardrails for Claude Code",
+  "name": "claude-doctor",
+  "description": "Claude Doctor single-plugin marketplace — structural guardrails for Claude Code",
   "owner": {
     "name": "Alena Zakharova",
     "url": "https://github.com/alenazaharovaux"
   },
   "plugins": [
     {
-      "name": "cloud-doctor",
+      "name": "claude-doctor",
       "source": "./",
       "description": "In-moment reminders for production actions, architectural questions, and completion claims without evidence",
       "category": "productivity",
