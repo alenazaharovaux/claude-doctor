@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Plugin local data (when plugin runs from this repo)
+.claude/*.local.md
+.claude/*.local.json
+data/
+*.log
+*.heartbeat
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,43 @@
+---
+# Cloud Doctor — per-project configuration
+# Copy this file to your project as: .claude/cloud-doctor.local.md
+# Changes take effect on the next hook invocation (no Claude Code restart needed).
+
+# Master switch. When false, ALL Cloud Doctor hooks skip.
+enabled: true
+
+# Injected-message language: "en" | "ru" | "both"
+language: "en"
+
+# Production-keyword detector: triggers self-check block.
+# Defaults (shipped): common EN+RU prod-op verbs.
+# Add your own project-specific words here (e.g. your company's deploy tool):
+prod_keywords_add: []
+# To fully replace defaults with a curated list, use this instead:
+prod_keywords_replace: []
+
+# Architectural-question detector: requires tool-call grounding.
+architectural_enabled: true
+
+# Fabrication detector (Stop hook, log-only).
+fabrication_enabled: true
+
+# Extra completion-claim phrases to detect (on top of defaults):
+claim_phrases_add: []
+# Or fully replace:
+claim_phrases_replace: []
+
+# Scan ~/.claude/history.jsonl to detect attribution fabrication?
+# Turn off for privacy. Default true.
+scan_history: true
+
+# Override location of the SessionStart monitoring summary file.
+# Leave empty to use plugin data dir. Path expands ~.
+monitoring_path: ""
+---
+
+# Notes
+
+Body is ignored by Cloud Doctor. Use it for your own notes about why
+you configured the plugin this way (e.g. «added project X's jargon,
+disabled architectural for code-review-only sessions»).

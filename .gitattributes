@@ -1,0 +1,13 @@
+# Keep LF line endings for shell scripts and Python files
+# so they work correctly on Linux/macOS after being committed on Windows.
+*.sh text eol=lf
+*.py text eol=lf
+*.json text eol=lf
+
+# Normalize text files
+*.md text
+*.txt text
+
+# Binary
+*.png binary
+*.jpg binary

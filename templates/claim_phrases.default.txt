@@ -1,0 +1,59 @@
+# Cloud Doctor — default completion-claim phrases
+# Bilingual (EN + RU), extensible via user's .local.md
+# Format: one phrase per line, lowercase, no regex
+# Case-insensitive substring match on each sentence
+# Empty lines and lines starting with # are ignored
+
+# English
+done
+completed
+finished
+working
+works
+deployed
+pushed
+committed
+passing
+passed
+all set
+all good
+ready
+fixed
+added
+updated
+created
+successful
+
+# Russian
+готово
+работает
+добавлен
+запушено
+обновлён
+создан
+сделано
+задеплоено
+написано
+добавил
+исправлено
+обновлена
+закоммичено
+удалён
+проверено
+успешный
+создана
+добавлена
+развёрнуто
+создал
+создано
+успешно
+добавила
+обновила
+всё работает
+создала
+всё готово
+всё ок
+протестировано
+закончено
+развернуто
+успешное

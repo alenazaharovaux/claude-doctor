@@ -1,0 +1,13 @@
+{
+  "name": "cloud-doctor",
+  "version": "0.1.0",
+  "description": "Structural guardrails for Claude Code: in-moment reminders for production actions, architectural questions, and completion claims without evidence. Because rules in CLAUDE.md don't activate in the moment.",
+  "author": {
+    "name": "Alena Zakharova",
+    "url": "https://github.com/alenazaharovaux"
+  },
+  "homepage": "https://github.com/alenazaharovaux/cloud-doctor",
+  "repository": "https://github.com/alenazaharovaux/cloud-doctor",
+  "license": "MIT",
+  "keywords": ["hooks", "self-check", "guardrails", "verification", "quality"]
+}
