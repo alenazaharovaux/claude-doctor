@@ -6,7 +6,7 @@
 
 **Why this exists:** Rules in CLAUDE.md / AGENTS.md are post-hoc appeals — Claude reads them at session start, then drifts away from them mid-session. This plugin injects reminders at the exact event where the pattern would repeat (`UserPromptSubmit` / `Stop`), not as text that needs to be re-read. See [references/philosophy.md](references/philosophy.md) for the full rationale with external citations.
 
-**Status:** v0.1.0, log-only detection for the Stop hook (tunable). Cross-platform (Linux / macOS / Windows with Git Bash).
+**Status:** v0.2.1. Log-only detection by default; selective blocking available for phrases you add to `claim_phrases_blocking` via `/claude-doctor:triage`. Cross-platform (Linux / macOS / Windows with Git Bash).
 
 ---
 
@@ -121,6 +121,8 @@ The command reads the log, filters out flags that were already triaged in an ear
 - **Review individually** — expands into a per-flag loop with the full context of each occurrence, so you can decide case by case.
 - **Skip** — leaves the flag for a later run.
 
+**When to pick «Review individually».** The bulk view shows three sample contexts per phrase — usually enough to recognise the pattern and choose block or ignore. If those three samples point in opposite directions (one looks like honest reporting after a tool call, another looks like an unverified claim), that is the signal to switch to review. The per-flag loop walks you through occurrences one at a time until you see enough to decide. The final decision is still per-phrase: as soon as you pick **Block this phrase** or **Ignore this phrase** on any single flag, that choice applies to all remaining occurrences of the same phrase, and the review ends. You don't process every flag individually — you read until you understand, then act once.
+
 After the top phrases are handled in bulk, anything left is shown one flag at a time with the same three decisions minus the «all» qualifier. Phrases you've already blocked or ignored are filtered out automatically on every run, so the next `/triage` does not re-ask about resolved cases. Phrases you skipped come back on the next run — skip is «decide later», not «never show again».
 
 The point of this flow is gradual training. You start with every phrase treated equally; over a few sessions the blocking list collects the small number of patterns that actually predict trouble for your work, and the ignore list absorbs whatever happens to overlap with normal writing. Once both lists stabilise, the detector runs on the residual — which is where real signal tends to be.
@@ -197,7 +199,7 @@ cd ~/.claude/plugins/marketplaces/claude-doctor && git pull
 
 **How do I turn it off without uninstalling?** Two options. (1) `/plugin disable claude-doctor@claude-doctor` — disables until you re-enable. (2) In `.claude/claude-doctor.local.md`, set `enabled: false` — disables per-project. Per-project setting is preferred when you want the plugin on globally but off in a specific repo.
 
-**False positives on fabrication-detector.** The v0.1 release is log-only, so false positives don't block work — they accumulate in the log. Review flagged phrases and adjust `claim_phrases_replace` to exclude ones that cause noise in your writing style. Report patterns of systematic false positives as an issue.
+**False positives on fabrication-detector.** By default the Stop hook is log-only, so false positives never block your work — they just accumulate in the audit log. Process them through `/claude-doctor:triage`: phrases you mark **Ignore all** stop being flagged entirely; only phrases you explicitly choose to **Block all** will start enforcing with `exit 2`. Report patterns of systematic false positives as an issue so the shipped default phrase list can improve.
 
 ---
 

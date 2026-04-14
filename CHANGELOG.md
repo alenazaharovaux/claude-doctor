@@ -2,6 +2,13 @@
 
 All notable changes to Claude Doctor will be documented in this file.
 
+## [0.2.2] — 2026-04-15
+
+### Documentation
+- Added a paragraph to the «Triaging flags interactively» section in both `README.md` and `README.ru.md` explaining when to pick **Review individually** over bulk (when the three sample contexts disagree) and how the per-flag loop exits as soon as you make a block/ignore decision.
+- Updated the status line at the top of both READMEs from `v0.1.0, log-only detection` to reflect the actual v0.2.x behavior: log-only by default, with selective blocking available through `/triage`.
+- Rewrote the «False positives on fabrication-detector» troubleshooting entry. It previously described the v0.1 workflow (edit `claim_phrases_replace` by hand) without mentioning that `/triage` now handles this through buttons. The new text points users to the correct workflow first.
+
 ## [0.2.1] — 2026-04-15
 
 ### Fixed
