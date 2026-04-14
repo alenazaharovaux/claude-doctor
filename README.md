@@ -95,6 +95,14 @@ Why does this need to be a hook instead of just another rule in CLAUDE.md? Short
 
 **Configuration changes don't take effect.** Config is re-read per hook invocation, but you need to trigger a hook event to see the new behavior. Send a new user message with a trigger word. If still no effect, check that you saved the file and that YAML frontmatter is syntactically valid (starts and ends with `---` on their own lines).
 
+**`/plugin update` says «already at latest version» but I see a new release on GitHub.** Known Claude Code bug — see [anthropics/claude-code issue #25244](https://github.com/anthropics/claude-code/issues/25244). The plugin manager doesn't `git pull` the marketplace clone before checking versions. Workaround:
+
+```bash
+cd ~/.claude/plugins/marketplaces/cloud-doctor && git pull
+# then back in Claude Code:
+/plugin update cloud-doctor@cloud-doctor
+```
+
 **Where are the logs?** Audit log: `$CLAUDE_PLUGIN_DATA/audit.log` if that env var is set by Claude Code, otherwise `~/.claude/plugin-data/cloud-doctor/audit.log`. Heartbeat log (proves hook ran even without flags): same directory, `heartbeat.log`. Monitoring summary: same directory, `monitoring.md`, unless you override `monitoring_path`.
 
 **How do I turn it off without uninstalling?** Two options. (1) `/plugin disable cloud-doctor@cloud-doctor` — disables until you re-enable. (2) In `.claude/cloud-doctor.local.md`, set `enabled: false` — disables per-project. Per-project setting is preferred when you want the plugin on globally but off in a specific repo.

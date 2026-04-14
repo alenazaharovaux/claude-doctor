@@ -95,6 +95,14 @@ History-scan выключен по причинам приватности.
 
 **Изменения конфига не применяются.** Конфиг перечитывается на каждый вызов хука, но ты должен триггернуть event, чтобы увидеть новое поведение. Отправь новое сообщение с триггерным словом. Если всё равно не работает — проверь, что файл сохранён и что YAML-frontmatter синтаксически корректен (начинается и заканчивается отдельными строками `---`).
 
+**`/plugin update` говорит «already at latest» хотя на GitHub новый релиз.** Известный баг Claude Code — см. [anthropics/claude-code issue #25244](https://github.com/anthropics/claude-code/issues/25244). Plugin manager не делает `git pull` локального клона marketplace перед проверкой версии. Workaround:
+
+```bash
+cd ~/.claude/plugins/marketplaces/cloud-doctor && git pull
+# затем в Claude Code:
+/plugin update cloud-doctor@cloud-doctor
+```
+
 **Где логи?** Audit log: `$CLAUDE_PLUGIN_DATA/audit.log`, если эта env var установлена Claude Code, иначе `~/.claude/plugin-data/cloud-doctor/audit.log`. Heartbeat log (доказывает, что хук запускался): та же директория, `heartbeat.log`. Файл мониторинга: та же директория, `monitoring.md`, если не переопределён через `monitoring_path`.
 
 **Как выключить без удаления?** Два варианта. (1) `/plugin disable cloud-doctor@cloud-doctor` — отключает глобально до ручного включения. (2) В `.claude/cloud-doctor.local.md` поставь `enabled: false` — отключает для конкретного проекта. Второй вариант предпочтительнее, если хочешь чтобы плагин работал везде, кроме одного конкретного репо.

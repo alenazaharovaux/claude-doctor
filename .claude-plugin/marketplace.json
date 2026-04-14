@@ -10,7 +10,6 @@
       "name": "cloud-doctor",
       "source": "./",
       "description": "In-moment reminders for production actions, architectural questions, and completion claims without evidence",
-      "version": "0.1.0",
       "category": "productivity",
       "tags": ["hooks", "guardrails", "quality", "self-check"]
     }
