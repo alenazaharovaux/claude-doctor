@@ -13,6 +13,9 @@ Schema:
     fabrication_enabled: true|false    # default true
     claim_phrases_add: [str, ...]
     claim_phrases_replace: [str, ...]
+    claim_phrases_blocking: [str, ...] # v0.2: phrases that trigger Stop-hook exit 2
+    claim_phrases_ignore: [str, ...]   # v0.2: phrases excluded from flagging entirely
+    last_triage_timestamp: "ISO-8601"  # v0.2: auto-managed by /triage, do not edit
     scan_history: true | false         # default true, reads ~/.claude/history.jsonl
     monitoring_path: "path/to/file.md" # optional override
 
@@ -31,6 +34,9 @@ DEFAULTS = {
     "fabrication_enabled": True,
     "claim_phrases_add": [],
     "claim_phrases_replace": [],
+    "claim_phrases_blocking": [],
+    "claim_phrases_ignore": [],
+    "last_triage_timestamp": "",
     "scan_history": True,
     "monitoring_path": "",
 }

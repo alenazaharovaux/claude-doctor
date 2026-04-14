@@ -305,6 +305,15 @@ def main():
     cc_candidates = find_completion_claims(response_text, phrases)
     cc_flagged = cc_candidates if cc_candidates and not has_evidence(response_tools) else []
 
+    # v0.2: ignore-list filter — these phrases never flag (user opted them out via /triage)
+    ignore_set = {p.lower() for p in cfg["claim_phrases_ignore"] if p}
+    if ignore_set:
+        cc_flagged = [(p, ctx) for p, ctx in cc_flagged if p not in ignore_set]
+
+    # v0.2: blocking check — any cc_flagged phrase in blocking list triggers Stop-hook exit 2
+    blocking_set = {p.lower() for p in cfg["claim_phrases_blocking"] if p}
+    blocking_hits = [(p, ctx) for p, ctx in cc_flagged if p in blocking_set]
+
     if not flagged and not cc_flagged:
         sys.exit(0)
 
@@ -334,6 +343,18 @@ def main():
         print(f"  Tools in response: {response_tools or 'none'}", file=sys.stderr)
 
     print(f"Log: {log_file()}", file=sys.stderr)
+
+    # v0.2: blocking — if any cc phrase is in claim_phrases_blocking, exit 2 so Claude must correct
+    if blocking_hits:
+        print("", file=sys.stderr)
+        print("🚫 CLAUDE DOCTOR — BLOCKING:", file=sys.stderr)
+        for phrase, ctx in blocking_hits:
+            print(f"  Phrase «{phrase}» triggered without evidence-tool.", file=sys.stderr)
+            print(f"  Context: {ctx[:150]}", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("You must either: (a) verify the claim by calling Read/Bash/WebFetch and re-state, or (b) retract the claim explicitly.", file=sys.stderr)
+        sys.exit(2)
+
     sys.exit(0)
 
 

@@ -27,6 +27,20 @@ claim_phrases_add: []
 # Or fully replace:
 claim_phrases_replace: []
 
+# Blocking list (v0.2+). Phrases here trigger Stop-hook exit 2 if Claude uses them
+# without an evidence-tool call in the same response. Normally filled through
+# /claude-doctor:triage, not by hand.
+claim_phrases_blocking: []
+
+# Ignore list (v0.2+). Phrases here are excluded from flagging entirely — not
+# written to the audit log, not counted. Filled through /claude-doctor:triage,
+# button «Ignore» or «Ignore all».
+claim_phrases_ignore: []
+
+# Timestamp (ISO-8601) of the last flag processed by /claude-doctor:triage.
+# Managed automatically by the triage command — leave blank and do not edit by hand.
+last_triage_timestamp: ""
+
 # Scan ~/.claude/history.jsonl to detect attribution fabrication?
 # Turn off for privacy. Default true.
 scan_history: true

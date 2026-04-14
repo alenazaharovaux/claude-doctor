@@ -186,6 +186,21 @@ def format_markdown(entries, limit):
             lines.append(f"**Context:** {ctx}")
             lines.append("")
 
+    lines.append("---")
+    lines.append("")
+    lines.append("## What to do with these flags")
+    lines.append("")
+    lines.append(
+        "Run `/claude-doctor:triage` to process each flag interactively with buttons — "
+        "for every phrase you decide: block future occurrences, ignore them, or leave alone."
+    )
+    lines.append("")
+    lines.append(
+        "Manual alternative: edit `.claude/claude-doctor.local.md` and add phrases to "
+        "`claim_phrases_blocking` or `claim_phrases_ignore`."
+    )
+    lines.append("")
+
     return "\n".join(lines) + "\n"
 
 

@@ -2,6 +2,23 @@
 
 All notable changes to Claude Doctor will be documented in this file.
 
+## [0.2.0] — 2026-04-15
+
+### Added
+- `/claude-doctor:triage` slash command — interactive triage of accumulated flags through `AskUserQuestion` buttons inside the chat. For every phrase you decide: **Block** (future occurrences trigger the Stop hook and require correction), **Ignore** (future occurrences bypass detection entirely), or **Skip** (leave for later). Closes the remaining loop from v0.1.x: users can act on flags without editing config files by hand.
+- New config fields in `.claude/claude-doctor.local.md`: `claim_phrases_blocking` (list of phrases that trigger `sys.exit(2)` when detected without evidence tool), `claim_phrases_ignore` (list of phrases excluded from flagging entirely), `last_triage_timestamp` (auto-managed, prevents re-asking about already-processed flags).
+- Bulk operations in `/triage`: «Block all X» and «Ignore all X» buttons that resolve every occurrence of a phrase in one click. Critical for skewed flag distributions — the top few phrases typically account for most of the volume, so per-phrase bulk collapses hundreds of clicks into a handful.
+- Hint at the bottom of `/claude-doctor:review` output pointing users to `/triage` or the manual-edit alternative.
+
+### Changed
+- `hooks/fabrication_detector.py` now reads `claim_phrases_blocking` and `claim_phrases_ignore` from config. Ignored phrases are filtered out before the log is written. If any surviving flagged phrase matches the blocking list, the hook exits with code 2 and writes a stderr message that Claude Code feeds back into the conversation as Stop-hook protocol output — Claude must then verify the claim or retract it.
+- `.claude-plugin/plugin.json` — version bumped from `0.1.1` to `0.2.0`.
+
+### Why this exists
+v0.1.x was log-only. Users could inspect flags through `/claude-doctor:review`, but the only way to act on them was to open `.claude/claude-doctor.local.md` and edit YAML lists by hand — high friction, and the config schema had no fields for per-phrase block/ignore decisions anyway. v0.2 adds both the config schema and the interactive triage loop, so the feedback path becomes: see flag in review → run triage → click button → next occurrence either blocks or gets ignored. No restart, no file editing.
+
+Attribution fabrication (the v1 check) is deliberately not part of `/triage` in this release — the decision surface is different (the phrase appears inside quoted attribution, so blocking is riskier). Attribution triage is scoped for v0.3.
+
 ## [0.1.1] — 2026-04-14
 
 ### Added

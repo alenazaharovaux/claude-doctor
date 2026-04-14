@@ -108,6 +108,27 @@ If any test fails — see [Troubleshooting](#troubleshooting) below.
 
 ---
 
+## Triaging flags interactively
+
+The interactive flow uses `AskUserQuestion` — a built-in Claude Code tool that renders clickable buttons directly in the chat. No extra install, no extra dependency: if you're running Claude Code, you already have it. Official reference for the slash-command model and tools: [code.claude.com/docs/en/slash-commands](https://code.claude.com/docs/en/slash-commands).
+
+After a few days of use, the audit log accumulates flags. Some correspond to real fabrication moments where Claude claimed completion without verifying anything. Others are noise — a phrase that legitimately shows up in the way you write, with no intent to mislead. The log on its own does not distinguish between them; you do, through `/claude-doctor:triage`.
+
+The command reads the log, filters out flags that were already triaged in an earlier run, and walks you through the remainder one phrase at a time. For the most frequent phrases it starts with a bulk prompt — `AskUserQuestion` buttons let you resolve every occurrence of a phrase in a single click:
+
+- **Block all** — adds the phrase to `claim_phrases_blocking`. The next time Claude writes this phrase without calling an evidence tool (`Read`, `Bash`, `WebFetch`, and so on), the `Stop` hook blocks the turn with exit code 2 and asks Claude to either verify the claim or retract it.
+- **Ignore all** — adds the phrase to `claim_phrases_ignore`. Future occurrences are dropped before they reach the log. Pick this for phrases that are part of your normal vocabulary.
+- **Review individually** — expands into a per-flag loop with the full context of each occurrence, so you can decide case by case.
+- **Skip** — leaves the flag for a later run.
+
+After the top phrases are handled in bulk, anything left is shown one flag at a time with the same three decisions minus the «all» qualifier. A timestamp of the last processed flag is written back into `.claude/claude-doctor.local.md` so the next `/triage` does not re-ask about anything you already resolved.
+
+The point of this flow is gradual training. You start with every phrase treated equally; over a few sessions the blocking list collects the small number of patterns that actually predict trouble for your work, and the ignore list absorbs whatever happens to overlap with normal writing. Once both lists stabilise, the detector runs on the residual — which is where real signal tends to be.
+
+If you prefer to work by hand, open `.claude/claude-doctor.local.md` and edit `claim_phrases_blocking` or `claim_phrases_ignore` directly. `/triage` is a convenience, not a requirement.
+
+---
+
 ## Configuration
 
 Edit `.claude/claude-doctor.local.md` in your project:
@@ -122,6 +143,9 @@ Edit `.claude/claude-doctor.local.md` in your project:
 | `fabrication_enabled` | bool | `true` | Enable Stop-hook fabrication detector |
 | `claim_phrases_add` | list[str] | `[]` | Extra completion-claim phrases |
 | `claim_phrases_replace` | list[str] | `[]` | If non-empty, fully replaces defaults |
+| `claim_phrases_blocking` | list[str] | `[]` | v0.2+: phrases that trigger Stop-hook `exit 2` when detected without an evidence tool. Normally populated through `/claude-doctor:triage`. |
+| `claim_phrases_ignore` | list[str] | `[]` | v0.2+: phrases excluded from flagging entirely. Populated through `/claude-doctor:triage` (Ignore / Ignore all). |
+| `last_triage_timestamp` | string | `""` | v0.2+: ISO-8601 timestamp of the last flag processed by `/triage`. Managed automatically — do not edit by hand. |
 | `scan_history` | bool | `true` | Let fabrication-detector read `~/.claude/history.jsonl` |
 | `monitoring_path` | string | `""` | Override SessionStart summary file location |
 
