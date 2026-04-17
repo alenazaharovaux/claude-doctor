@@ -19,6 +19,16 @@ prod_keywords_replace: []
 # Architectural-question detector: requires tool-call grounding.
 architectural_enabled: true
 
+# Checkpoint-keyword detector (v0.3+): injects handoff-format reminder when the user
+# says "checkpoint", "end session", "wrap up", "чекпоинт", "завершаем сессию", etc.
+# Ensures session memory is written as a self-contained handoff (commit SHA, state,
+# continuation prompt, infrastructure, quirks, ADR status) — not as a diary log.
+checkpoint_enabled: true
+# Extra checkpoint trigger words (on top of defaults):
+checkpoint_keywords_add: []
+# Or fully replace defaults:
+checkpoint_keywords_replace: []
+
 # Fabrication detector (Stop hook, log-only).
 fabrication_enabled: true
 

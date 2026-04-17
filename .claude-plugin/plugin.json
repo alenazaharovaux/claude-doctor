@@ -1,7 +1,7 @@
 {
   "name": "claude-doctor",
-  "version": "0.2.2",
-  "description": "Structural guardrails for Claude Code: in-moment reminders for production actions, architectural questions, and completion claims without evidence. Because rules in CLAUDE.md don't activate in the moment.",
+  "version": "0.3.0",
+  "description": "Structural guardrails for Claude Code: in-moment reminders for production actions, architectural questions, checkpoint handoffs, and completion claims without evidence. Because rules in CLAUDE.md don't activate in the moment.",
   "author": {
     "name": "Alena Zakharova",
     "url": "https://github.com/alenazaharovaux"

@@ -2,6 +2,12 @@
 
 All notable changes to Claude Doctor will be documented in this file.
 
+## [0.3.0] — 2026-04-17
+
+### Added
+- **Checkpoint-keyword detector** (`UserPromptSubmit`). Triggers on checkpoint/end-session phrasings — `checkpoint`, `end session`, `wrap up`, `чекпоинт`, `завершаем сессию`, and variants. On match, injects a five-section handoff template the assistant must follow when writing session memory: (1) current system state with commit SHA and what is complete vs partial, (2) a literal continuation prompt for the next session, (3) infrastructure left in place, (4) quirks discovered, (5) ADR status — explicit whether one is required and why. Closes the gap where session memory decays into diary logs and the next session wastes 15-20% of context rebuilding what the previous one already knew. Bilingual defaults; disabled via `checkpoint_enabled: false` in `.claude/claude-doctor.local.md`.
+- Config fields: `checkpoint_enabled` (default `true`), `checkpoint_keywords_add` (extends defaults), `checkpoint_keywords_replace` (replaces defaults entirely).
+
 ## [0.2.2] — 2026-04-15
 
 ### Documentation

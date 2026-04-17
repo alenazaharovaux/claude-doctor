@@ -11,6 +11,9 @@ Schema:
     prod_keywords_replace: [str, ...]  # fully replaces defaults if non-empty
     architectural_enabled: true|false  # default true
     fabrication_enabled: true|false    # default true
+    checkpoint_enabled: true|false     # default true (v0.3: handoff-format reminder)
+    checkpoint_keywords_add: [str, ...]
+    checkpoint_keywords_replace: [str, ...]
     claim_phrases_add: [str, ...]
     claim_phrases_replace: [str, ...]
     claim_phrases_blocking: [str, ...] # v0.2: phrases that trigger Stop-hook exit 2
@@ -32,6 +35,9 @@ DEFAULTS = {
     "prod_keywords_replace": [],
     "architectural_enabled": True,
     "fabrication_enabled": True,
+    "checkpoint_enabled": True,
+    "checkpoint_keywords_add": [],
+    "checkpoint_keywords_replace": [],
     "claim_phrases_add": [],
     "claim_phrases_replace": [],
     "claim_phrases_blocking": [],

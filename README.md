@@ -1,12 +1,12 @@
 # Claude Doctor
 
-> Structural guardrails for Claude Code. Hook-based in-moment reminders for production actions, architectural questions, and completion claims without evidence.
+> Structural guardrails for Claude Code. Hook-based in-moment reminders for production actions, architectural questions, checkpoint handoffs, and completion claims without evidence.
 
 [🇷🇺 Читать на русском](README.ru.md)
 
 **Why this exists:** Rules in CLAUDE.md / AGENTS.md are post-hoc appeals — Claude reads them at session start, then drifts away from them mid-session. This plugin injects reminders at the exact event where the pattern would repeat (`UserPromptSubmit` / `Stop`), not as text that needs to be re-read. See [references/philosophy.md](references/philosophy.md) for the full rationale with external citations.
 
-**Status:** v0.2.1. Log-only detection by default; selective blocking available for phrases you add to `claim_phrases_blocking` via `/claude-doctor:triage`. Cross-platform (Linux / macOS / Windows with Git Bash).
+**Status:** v0.3.0. Log-only detection by default; selective blocking available for phrases you add to `claim_phrases_blocking` via `/claude-doctor:triage`. Cross-platform (Linux / macOS / Windows with Git Bash).
 
 ---
 
@@ -15,6 +15,8 @@
 **Production-keyword detector** (UserPromptSubmit). Triggers when the user's message contains production-operation language — defaults are bilingual (`deploy`, `migrate`, `publish to`, `push to production`, plus Russian equivalents `деплой`, `миграци`, `опублик`). On match, injects a five-point self-check block the assistant must fill with concrete tool output before acting. Extend the default list via `prod_keywords_add` in your project config.
 
 **Architectural-question detector** (UserPromptSubmit). Triggers on advisory phrasings (`how should I...`, `what's the best approach`, `which pattern`, `посоветуй`, `как лучше`). On match, requires at least one tool call on real files (Read / Bash / Grep / Glob) before the assistant generates any recommendation. Addresses Pattern B from the philosophy doc — advisory questions tend to be answered from auto-loaded context rather than from fresh file reads.
+
+**Checkpoint-keyword detector** (UserPromptSubmit, v0.3). Triggers on checkpoint/end-session phrasings (`checkpoint`, `end session`, `wrap up`, `чекпоинт`, `завершаем сессию`). On match, injects a five-section handoff template the assistant must follow when writing session memory: current system state (commit SHA, complete vs partial, files awaiting next step), literal continuation prompt, infrastructure left in place, quirks discovered, ADR status. Prevents session memory from decaying into diary logs — the next session should resume from a self-contained handoff without rebuilding context. Extend via `checkpoint_keywords_add`, disable via `checkpoint_enabled: false`.
 
 **Fabrication detector** (Stop). Scans the assistant's last response when it tries to stop. Two sub-checks: (1) attribution fabrication — assistant claims the user has «code words» that the user never actually used in declarative form; (2) completion claims without evidence — assistant says «done», «deployed», «works» in a response that made no evidence-producing tool call (Read, Bash, Grep, Glob, WebFetch, MCP reads). Log-only in v0.1; flagged patterns are written to `$CLAUDE_PLUGIN_DATA/audit.log` (or `~/.claude/plugin-data/claude-doctor/audit.log` as fallback).
 
