@@ -2,6 +2,11 @@
 
 All notable changes to Claude Doctor will be documented in this file.
 
+## [0.3.1] — 2026-04-18
+
+### Fixed
+- **Checkpoint-keyword detector** now instructs the assistant to also output section 2 (the literal continuation prompt) **directly in the chat**, wrapped in a code block, so the user can copy-paste without opening the session file. Previously the injected template described what to put in the file but never required duplicating the prompt in the chat — so after writing the handoff file, assistants would stop without surfacing the prompt, forcing the user to open the file manually. Bilingual (EN + RU).
+
 ## [0.3.0] — 2026-04-17
 
 ### Added

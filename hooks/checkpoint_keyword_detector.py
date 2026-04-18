@@ -69,6 +69,11 @@ Required sections in session-*.md:
    - If architectural decisions were made → list ADR candidates
    - If not → state explicitly «ADR not required, reason: ...»
 
+6. **MANDATORY after writing the file — output section 2 (the literal prompt) in chat**
+   The user should not open the file to copy the prompt. Output it directly in the chat response,
+   wrapped in a code block (```), so copy-paste is one click away.
+   Without this step, the checkpoint is not considered complete.
+
 Applies to EVERY session-*.md file on «checkpoint» / «end session» trigger.
 """
 
@@ -101,6 +106,11 @@ Session memory файл — это НЕ дневниковый лог.
 5. **ADR-статус** (явно)
    - Если были архитектурные решения → список ADR-кандидатов
    - Если нет → явно «ADR не требуется, причина: ...»
+
+6. **ОБЯЗАТЕЛЬНО после записи файла — вывести секцию 2 (буквальный промпт) в чат**
+   Пользователь не должен открывать файл ради копипаста. Промпт для следующей сессии показывается
+   непосредственно в ответе, обёрнутый в code-блок (```), чтобы копирование было одним кликом.
+   Без этого шага чекпоинт не считается завершённым.
 
 Применимо к КАЖДОМУ session-*.md файлу при триггере «чекпоинт» / «завершаем сессию».
 """
